@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Table, Button, Form, Pagination, Modal } from "react-bootstrap";
-import { GetUsers, Register, GetUserById, DeleteUser } from "../services/api";
-
+import { GetUsers, Register, GetUserById, DeleteUser, UpdateUserById } from "../services/api";
 const Usuários = () => {
     const [users, setUsers] = useState([]); // Lista de usuários
     const [showModal, setShowModal] = useState(false); // Controle do modal
-    const [newUser, setNewUser] = useState({ name: "", email: "" }); // Novo usuário
+    const [newUser, setNewUser] = useState({ name: "", email: "", password : "" }); // Novo usuário
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = Math.ceil(users.length / 10); // Assuming 10 users per page
 
@@ -33,6 +32,10 @@ const Usuários = () => {
     // Criar novo usuário
     const handleCreateUser = async () => {
         try {
+            if(newUser.name === "" || newUser.email === "" || newUser.password === "") {
+                alert("Preencha todos os campos");
+                return;
+            }
             const data = await Register(newUser.email, newUser.name, newUser.password);
             if (data.status === '200') {
                 alert("Usuário cadastrado com sucesso");
@@ -53,6 +56,29 @@ const Usuários = () => {
         const userToEdit = await GetUserById(id);
         setNewUser({ id: userToEdit.data.id, name: userToEdit.data.nome, email: userToEdit.data.email });
         setShowModal(true);
+    };
+
+    const handleUpdateUser = async () => {
+        try {
+            const data = await UpdateUserById(newUser.id, newUser.email, newUser.name, newUser.password);
+            console.log(data);  
+            if (data.status === 200) {
+                setShowModal(false);
+                fetchUsers();
+                
+                const loggedUserId = localStorage.getItem("UserID");
+                if (loggedUserId && parseInt(loggedUserId) === newUser.id) {
+                    localStorage.setItem("UserName", newUser.name);
+                    window.dispatchEvent(new Event("userNameUpdated"));
+                }
+            } else if (data.status === '409') {
+                setNewUser({ name: "", email: "", password: "" });
+                alert("Usuário já cadastrado");
+                return;
+            }
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     // Deletar usuário
@@ -150,7 +176,7 @@ const Usuários = () => {
                         <Form.Group className="mb-3">
                             <Form.Label>Senha</Form.Label>
                             <Form.Control
-                                type="current-password"
+                                type="password"
                                 value={newUser.password}
                                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                             />
@@ -167,7 +193,7 @@ const Usuários = () => {
                     >
                         Fechar
                     </Button>
-                    <Button variant="primary" onClick={handleCreateUser}>
+                    <Button variant="primary" onClick={newUser.id ? handleUpdateUser : handleCreateUser}>
                         Salvar
                     </Button>
                 </Modal.Footer>

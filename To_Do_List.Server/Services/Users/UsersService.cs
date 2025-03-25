@@ -79,9 +79,33 @@ namespace To_Do_List.Server
             throw new NotImplementedException();
         }
 
-        public Task<Users> UpdateUserAsync(Users user)
+        public async Task<int> UpdateUserByIdAsync(int id, string email, string senha, string nome)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var user = await _context.Users.FindAsync(id);
+                if (user == null)
+                {
+                    throw new Exception("Usuário não encontrado.");
+                }
+                if(senha == null)
+                {
+                    senha = user.Senha;
+                }
+
+                user.Email = email;
+                user.Senha = senha;
+                user.Nome = nome;
+                user.Ativo = user.Ativo;
+
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+                return 200; 
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
         }
         public async Task<List<Users>> GetAllUsersAsync()
         {

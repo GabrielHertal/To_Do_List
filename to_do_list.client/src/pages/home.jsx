@@ -14,6 +14,8 @@ function Home() {
         confirm("Deseja realmente sair?");
         if(confirm){
             localStorage.removeItem("AuthToken");
+            localStorage.removeItem("UserID");
+            localStorage.removeItem("UserName");
             navigate("/");
         }
     }
@@ -31,9 +33,20 @@ function Home() {
             }
             else {
                 setUserName(response.name);
+                localStorage.setItem("UserID", response.id);
             }
         }
         fetchUserInfo();
+        // Atualiza o nome do usuário ao detectar mudanças
+        const handleUserNameUpdate = () => {
+            setUserName(localStorage.getItem("UserName") || "User");
+        };
+
+        window.addEventListener("userNameUpdated", handleUserNameUpdate);
+
+        return () => {
+            window.removeEventListener("userNameUpdated", handleUserNameUpdate);
+        };
     }, [navigate]);
 
     const [content, setContent] = useState("Content area...");

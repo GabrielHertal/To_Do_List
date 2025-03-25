@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using To_Do_List.Server.Data;
+﻿using Microsoft.AspNetCore.Mvc;
+using To_Do_List.Server.DTO;
 using To_Do_List.Server.Models;
+using To_Do_List.Server.Services;
 
 namespace To_Do_List.Server.Controllers
 {
@@ -14,95 +9,49 @@ namespace To_Do_List.Server.Controllers
     [ApiController]
     public class TarefasController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ITarefasService _tarefa;
 
-        public TarefasController(AppDbContext context)
+        public TarefasController(ITarefasService tarefa)
         {
-            _context = context;
+            _tarefa = tarefa;
         }
 
-        // GET: api/Tarefas
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Tarefas>>> GetTarefas()
+        [HttpGet("GetTarefasByUser/{id}")]
+        public async Task<ActionResult<List<Tarefas>>> GetTarefasByUser(int id)
         {
-            return await _context.Tarefas.ToListAsync();
-        }
-
-        // GET: api/Tarefas/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Tarefas>> GetTarefas(int id)
-        {
-            var tarefas = await _context.Tarefas.FindAsync(id);
-
-            if (tarefas == null)
-            {
-                return NotFound();
-            }
-
-            return tarefas;
-        }
-
-        // PUT: api/Tarefas/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTarefas(int id, Tarefas tarefas)
-        {
-            if (id != tarefas.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(tarefas).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                var tarefas = await _tarefa.GetTarefasByUserAsync(id);
+                return Ok(tarefas);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception e)
             {
-                if (!TarefasExists(id))
+                return BadRequest(new { Message = e.Message });
+            }
+        }
+        [HttpPost("CreateTarefaAsync")]
+        public async Task<ActionResult> CreateTarefaAsync([FromBody] tarefaDTO tarefaDTO)
+        {
+            try
+            {
+                int result = await _tarefa.CreateTarefaAsync(tarefaDTO.titulo, tarefaDTO.descricao, tarefaDTO.fkidusuario, tarefaDTO.status, DateTime.UtcNow);
+                if (result == 201)
                 {
-                    return NotFound();
+                    return Ok(new { Message = "Tarefa criada com sucesso!", Status = 201 });
+                }
+                else if (result == 409)
+                {
+                    return Conflict(new { Message = "Tarefa já existente(títulos iguais)!", Status = 409 });
                 }
                 else
                 {
-                    throw;
+                    return StatusCode(500, new { Message = "Erro ao criar a tarefa." });
                 }
             }
-
-            return NoContent();
-        }
-
-        // POST: api/Tarefas
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Tarefas>> PostTarefas(Tarefas tarefas)
-        {
-            _context.Tarefas.Add(tarefas);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetTarefas", new { id = tarefas.Id }, tarefas);
-        }
-
-        // DELETE: api/Tarefas/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTarefas(int id)
-        {
-            var tarefas = await _context.Tarefas.FindAsync(id);
-            if (tarefas == null)
+            catch (Exception e)
             {
-                return NotFound();
+                return BadRequest($"Falha ao criar {e.Message}");
             }
-
-            _context.Tarefas.Remove(tarefas);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool TarefasExists(int id)
-        {
-            return _context.Tarefas.Any(e => e.Id == id);
         }
     }
 }

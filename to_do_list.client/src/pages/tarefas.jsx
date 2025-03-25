@@ -2,18 +2,13 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Form, Button } from "react-bootstrap";
-import { GetUsers, CreateTarefa } from "../services/api";
+import { GetUsers, CreateTarefa, GetTarefasByUserId } from "../services/api";
 
 const Tarefas = () => {
-  const [toDoTasks, setToDoTasks] = useState([
-    { id: "1", content: "Fazer login no sistema" },
-    { id: "2", content: "Criar API de autenticação" },
-    { id: "3", content: "Finalizar layout do dashboard" },
-  ]);
-
   const [showModal, setShowModal] = useState(false); // Controle do modal
-  const [NewTarefa, setNewTarefa] = useState({ name: "", email: "", userId: "" }); // Novo usuário
+  const [NewTarefa, setNewTarefa] = useState({ titulo: "", descricao: "", userId: "", status: ""}); // Novo usuário
   const [inProgressTasks, setInProgressTasks] = useState([]);
+  const [toDoTasks, setToDoTasks] = useState([]);
   const [doneTasks, setDoneTasks] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -31,24 +26,48 @@ const Tarefas = () => {
     }
   };
 
+  const fechTarefasByUserId = async () => {
+    try {
+      const IdUserConnected = localStorage.getItem("UserID");
+      const response = await GetTarefasByUserId(IdUserConnected);
+      const tarefas = response.data;
+      if (Array.isArray(tarefas)) {
+        // Categorize tasks
+        const toDo = tarefas.filter(task => task.status === '0');
+        const inProgress = tarefas.filter(task => task.status === '1');
+        const done = tarefas.filter(task => task.status === '2');
+        setToDoTasks(toDo);
+        setInProgressTasks(inProgress);
+        setDoneTasks(done);
+      } else {
+        console.error("Erro: a API nao retornou um array valido.");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
   useEffect(() => {
-    console.log(users);
-  }, [users]);
+    fetchUsers();
+    const userId = localStorage.getItem("UserID");
+    fechTarefasByUserId(userId);
+  }, []);
 
   const handleCreateTarefa = async () => {
     try {
-      console.log(NewTarefa.userId);
-      const data = await CreateTarefa(NewTarefa.title, NewTarefa.descricao, NewTarefa.userId);
-      if (data.status === '200') {
-        alert("Usuário cadastrado com sucesso");
+      console.log(NewTarefa);
+      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , NewTarefa.userId, NewTarefa.status);
+      console.log(data.status);
+      if (data.status === 200) {
+        alert("Tarefa cadastrado com sucesso");
         setShowModal(false);
-        fetchUsers();
+        fechTarefasByUserId(NewTarefa.userId); // Refresh tasks after creating a new one
       } else if (data.status === '409') {
-        setNewTarefa({ name: "", email: "", password: "" });
-        alert("Usuário já cadastrado");
+        setNewTarefa({ titulo: "", descricao: "", userId: "", status: "" });
+        alert("Tarefa já cadastrado");
         return;
       }
     } catch (error) {
+      alert(error);
       console.log(error);
     }
   };
@@ -78,15 +97,19 @@ const Tarefas = () => {
           {(provided) => (
             <div className="list-group" {...provided.droppableProps} ref={provided.innerRef}>
               {tasks.map((task, index) => (
-                <Draggable key={task.id} draggableId={task.id} index={index}>
+                <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                   {(provided) => (
                     <div
                       className="list-group-item list-group-item-action shadow-sm mb-2 bg-light"
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
+                      onClick={() => {
+                        setNewTarefa(task);
+                        setShowModal(true);
+                      }}
                     >
-                      {task.content}
+                      {task.titulo}
                       <span className="float-end" style={{ cursor: "pointer" }} onClick={() => {
                         setNewTarefa(task);
                         setShowModal(true);
@@ -106,11 +129,11 @@ const Tarefas = () => {
 
   const getList = (id) => {
     switch (id) {
-      case "Fazer":
+      case "0":
         return toDoTasks;
-      case "Fazendo":
+      case "1":
         return inProgressTasks;
-      case "Concluida":
+      case "2":
         return doneTasks;
       default:
         return [];
@@ -119,13 +142,13 @@ const Tarefas = () => {
 
   const setLists = (id, newList) => {
     switch (id) {
-      case "Fazer":
+      case "0":
         setToDoTasks(newList);
         break;
-      case "Fazendo":
+      case "1":
         setInProgressTasks(newList);
         break;
-      case "Concluida":
+      case "2":
         setDoneTasks(newList);
         break;
       default:
@@ -139,13 +162,13 @@ const Tarefas = () => {
       <DragDropContext onDragEnd={onDragEnd}>
         <main className="row">
           {/* Coluna Tarefas a Fazer */}
-          <TaskColumn title="Tarefas à fazer" tasks={toDoTasks} bgColor="bg-danger" droppableId="Fazer" />
+          <TaskColumn title="Tarefas à fazer" tasks={toDoTasks} bgColor="bg-danger" droppableId="0" />
 
           {/* Coluna Tarefas em andamento */}
-          <TaskColumn title="Tarefas em andamento" tasks={inProgressTasks} bgColor="bg-warning" droppableId="Fazendo" />
+          <TaskColumn title="Tarefas em andamento" tasks={inProgressTasks} bgColor="bg-warning" droppableId="1" />
 
           {/* Coluna Tarefas Concluídas */}
-          <TaskColumn title="Tarefas concluídas" tasks={doneTasks} droppableId="Concluida" bgColor="bg-success" textColor="text-white" />
+          <TaskColumn title="Tarefas concluídas" tasks={doneTasks} droppableId="2" bgColor="bg-success" textColor="text-white" />
         </main>
       </DragDropContext>
 
@@ -155,57 +178,69 @@ const Tarefas = () => {
         onShow={fetchUsers}
         onHide={() => {
           setShowModal(false);
-            setNewTarefa({ name: "", email: "", password: "" });
-            }}
-            >
-            <Modal.Header closeButton>
-            <Modal.Title>{NewTarefa.title ? "Editar Tarefa" : "Criar Nova Tarefa"}</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-            <Form>
+          setNewTarefa({ titulo: "", descricao: "", userId: "", status:"" });
+        }}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>{NewTarefa.id ? "Editar Tarefa" : "Criar Nova Tarefa"}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
             <Form.Group className="mb-3">
               <Form.Label>Título</Form.Label>
               <Form.Control
-              type="text"
-              value={NewTarefa.title}
-              onChange={(e) => setNewTarefa({ ...NewTarefa, title: e.target.value })}
+                type="text"
+                value={NewTarefa.titulo}
+                onChange={(e) => setNewTarefa({ ...NewTarefa, titulo: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Descrição</Form.Label>
               <Form.Control
-              as="textarea"
-              rows={3}
-              value={NewTarefa.descricao}
-              onChange={(e) => setNewTarefa({ ...NewTarefa, descricao: e.target.value })}
+                as="textarea"
+                rows={3}
+                value={NewTarefa.descricao}
+                onChange={(e) => setNewTarefa({ ...NewTarefa, descricao: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Usuário</Form.Label>
               <Form.Select
-              value={NewTarefa.userId || ""}
-              onChange={(e) => setNewTarefa({ ...NewTarefa, userId: e.target.value })}
+                value={NewTarefa.userId || ""}
+                onChange={(e) => setNewTarefa({ ...NewTarefa, userId: e.target.value })}
               >
-              <option value="">Selecione um usuário</option>
-              {users.length > 0 ? (
-                users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.nome}
-                </option>
-                ))
-              ) : (
-                <option disabled>Carregando usuários...</option>
-              )}
+                <option value="">Selecione um usuário</option>
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.nome}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Carregando usuários...</option>
+                )}
               </Form.Select>
             </Form.Group>
-            </Form>
-            </Modal.Body>
-            <Modal.Footer>
-            <Button
+            <Form.Group className="mb-3">
+              <Form.Label>Status</Form.Label>
+              <Form.Select
+                value={NewTarefa.status || ""}
+                onChange={(e) => setNewTarefa({ ...NewTarefa, status: e.target.value })}
+              >
+                <option value="">Selecione um status</option>
+                <option value="0">A fazer</option>
+                <option value="1">Em andamento</option>
+                <option value="2">Concluído</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
             variant="secondary"
             onClick={() => {
               setShowModal(false);
-              setNewTarefa({ title: "", descricao: "", password: "" });
+              setNewTarefa({ titulo: "", descricao: "", userId: "", status: "" });
             }}
           >
             Fechar

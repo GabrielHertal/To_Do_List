@@ -78,5 +78,25 @@ namespace To_Do_List.Server.Controllers
                 return BadRequest(new { Message = e.Message });
             }
         }
+        [HttpPut("UpdateUser/{id}")]
+        public async Task<ActionResult> UpdateUserByIdAsync(int id, [FromBody] UserUpdateDTO user)
+        {
+            try
+            {
+                int result = await _user.UpdateUserByIdAsync(id, user.Email, user.Senha, user.Nome);
+                if (result == 200)
+                {
+                    return Ok(new { Message = "Usuário atualizado com sucesso.", Status = "200" });
+                }
+                else
+                {
+                    return BadRequest(new { Message = "Erro ao atualizar usuário.", ErrorCode = result });
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new { Message = "Erro aqui" + e.Message });
+            }
+        }
     }
 }

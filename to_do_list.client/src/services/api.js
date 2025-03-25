@@ -72,11 +72,45 @@ export const DeleteUser = async (id) => {
         return error.response.data;
     }
 }
-export const CreateTarefa = async (title, descricao, userId) => {
-    try{
-        console.log("Criando Tarefa" + title, descricao, userId);
+export const CreateTarefa = async (titulo, descricao, data_criacao, userId, status) => {
+    try{ 
+        const response = await api.post(`/Tarefas/CreateTarefaAsync`, {
+            titulo : titulo,
+            descricao : descricao,
+            data_criacao : data_criacao,
+            fkidusuario : userId,
+            status : status
+        });
+        return response;
     } catch (error) {
         return error.response.data;
     }
 }
+export const GetTarefasByUserId = async (id) => {
+    try{
+        const response = await api.get(`/Tarefas/GetTarefasByUser/${id}`);
+        return response;
+    }
+    catch (error) {
+        return error.response.data;
+    }
+}
+export const UpdateUserById = async (id, email, nome, senha) => {
+    try {
+        const response = await api.put(`/Users/UpdateUser/${id}`, 
+        {
+            email: email,
+            senha: senha || "", 
+            nome: nome
+        });
+
+        console.log(`Resposta da API:`, response);
+        return response;
+    } 
+    catch (error) {
+        console.error(`Erro na requisição:`, error);
+        return error.response?.data || { message: "Erro desconhecido" };
+    }
+};
+
 export default api;
