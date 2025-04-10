@@ -22,6 +22,64 @@ namespace To_Do_List.Server.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("To_Do_List.Server.Models.Inter_Quadro_Users", b =>
+                {
+                    b.Property<int>("Fk_Id_Quadro")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Fk_Id_Users")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("Fk_Id_Quadro");
+
+                    b.HasIndex("Fk_Id_Users");
+
+                    b.ToTable("Inter_Quadro_Users");
+                });
+
+            modelBuilder.Entity("To_Do_List.Server.Models.Inter_Tarefa_Quadro", b =>
+                {
+                    b.Property<int>("Fk_Id_Quadro")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Fk_Id_Tarefa")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("Fk_Id_Quadro");
+
+                    b.HasIndex("Fk_Id_Tarefa");
+
+                    b.ToTable("Inter_Tarefa_Quadro");
+                });
+
+            modelBuilder.Entity("To_Do_List.Server.Models.Quadro", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Ativo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Codigo_Convite")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Fk_Id_User_Dono")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fk_Id_User_Dono");
+
+                    b.ToTable("Quadro");
+                });
+
             modelBuilder.Entity("To_Do_List.Server.Models.Tarefas", b =>
                 {
                     b.Property<int>("Id")
@@ -39,8 +97,8 @@ namespace To_Do_List.Server.Migrations
                     b.Property<string>("Descricao")
                         .HasColumnType("text");
 
-                    b.Property<int>("FkIdUsuario")
-                        .HasColumnType("integer");
+                    b.Property<string>("Nota")
+                        .HasColumnType("text");
 
                     b.Property<char>("Status")
                         .HasColumnType("character(1)");
@@ -51,8 +109,6 @@ namespace To_Do_List.Server.Migrations
                         .HasColumnType("character varying(30)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FkIdUsuario");
 
                     b.ToTable("Tarefas");
                 });
@@ -98,11 +154,49 @@ namespace To_Do_List.Server.Migrations
                         });
                 });
 
-            modelBuilder.Entity("To_Do_List.Server.Models.Tarefas", b =>
+            modelBuilder.Entity("To_Do_List.Server.Models.Inter_Quadro_Users", b =>
+                {
+                    b.HasOne("To_Do_List.Server.Models.Quadro", "Quadro")
+                        .WithMany()
+                        .HasForeignKey("Fk_Id_Quadro")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("To_Do_List.Server.Models.Users", "Users")
+                        .WithMany()
+                        .HasForeignKey("Fk_Id_Users")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quadro");
+
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("To_Do_List.Server.Models.Inter_Tarefa_Quadro", b =>
+                {
+                    b.HasOne("To_Do_List.Server.Models.Quadro", "Quadro")
+                        .WithMany()
+                        .HasForeignKey("Fk_Id_Quadro")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("To_Do_List.Server.Models.Tarefas", "Tarefas")
+                        .WithMany()
+                        .HasForeignKey("Fk_Id_Tarefa")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quadro");
+
+                    b.Navigation("Tarefas");
+                });
+
+            modelBuilder.Entity("To_Do_List.Server.Models.Quadro", b =>
                 {
                     b.HasOne("To_Do_List.Server.Models.Users", "Users")
                         .WithMany()
-                        .HasForeignKey("FkIdUsuario")
+                        .HasForeignKey("Fk_Id_User_Dono")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

@@ -2,23 +2,30 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Form, Button } from "react-bootstrap";
-import { GetUsers, CreateTarefa, GetTarefasByUserId } from "../services/api";
+import { CreateTarefa, GetTarefaByQuadroId, GetTarefaById, UpdateTarefa, UpdateStatusTarefa } from "../services/tarefas/api";
+import { GetQuadrosByUserId } from "../services/quadros/api";
 
 const Tarefas = () => {
   const [showModal, setShowModal] = useState(false); // Controle do modal
-  const [NewTarefa, setNewTarefa] = useState({ titulo: "", descricao: "", userId: "", status: ""}); // Novo usuário
+  const [NewTarefa, setNewTarefa] = useState({ titulo: "", descricao: "", status: "", nota: "" }); // Novo usuário
   const [inProgressTasks, setInProgressTasks] = useState([]);
   const [toDoTasks, setToDoTasks] = useState([]);
   const [doneTasks, setDoneTasks] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [selectedDroppableId, setSelectedDroppableId] = useState(null);
+  const [selectedBoard, setSelectedBoard] = useState({ id: "", name: "" });
+  const [boards, setBoards] = useState([]);
 
-  const fetchUsers = async () => {
+  const fetchQuadros = async () => {
     try {
-      const res = await GetUsers();
-      if (res && Array.isArray(res.data)) {
-        setUsers(res.data);
+      const userid = localStorage.getItem("UserID");
+      const res = await GetQuadrosByUserId(userid);
+      if (res && Array.isArray(res.data) && res.data.length > 0) {
+        setBoards(res.data);
+        setSelectedBoard(res.data[0]);
       } else {
-        setUsers([]);
+        setBoards([]);
+        setSelectedBoard(null);
+        alert("Erro: a API nao retornou um array valido.");
         console.error("Erro: a API nao retornou um array valido.");
       }
     } catch (error) {
@@ -26,10 +33,34 @@ const Tarefas = () => {
     }
   };
 
-  const fechTarefasByUserId = async () => {
+  const handleEditTarefa = async (id) => {
     try {
-      const IdUserConnected = localStorage.getItem("UserID");
-      const response = await GetTarefasByUserId(IdUserConnected);
+      const data = await GetTarefaById(id);
+      setNewTarefa({ id: data.data.id, titulo: data.data.titulo, descricao: data.data.descricao, status: data.data.status, nota: data.data.nota });
+      setShowModal(true);
+    } catch (error) {
+      console.log(error);
+      alert(error);
+    }
+  }
+
+  const handleUpdateTarefa = async () => {
+    try {
+      const data = await UpdateTarefa(NewTarefa.id, NewTarefa.titulo, NewTarefa.descricao, NewTarefa.status, NewTarefa.nota);
+      if (data.status === 200) {
+        setShowModal(false);
+        fechTarefasByQuadroId(selectedBoard.id);
+      }
+    } catch (error) {
+      console.log(error);
+      alert(error);
+    }
+  }
+
+  const fechTarefasByQuadroId = async (quadroId) => {
+    if(!quadroId) return;
+    try {
+      const response = await GetTarefaByQuadroId(quadroId);
       const tarefas = response.data;
       if (Array.isArray(tarefas)) {
         // Categorize tasks
@@ -47,22 +78,41 @@ const Tarefas = () => {
     }
   };
   useEffect(() => {
-    fetchUsers();
-    const userId = localStorage.getItem("UserID");
-    fechTarefasByUserId(userId);
-  }, []);
+    if (selectedBoard && selectedBoard.id) {
+      fechTarefasByQuadroId(selectedBoard.id);
+    }
+  }, [selectedBoard]);
 
+  useEffect(() => {
+    const fetchQuadros = async () => {
+      try {
+        const userid = localStorage.getItem("UserID");
+        const res = await GetQuadrosByUserId(userid);
+        if (res && Array.isArray(res.data) && res.data.length > 0) {
+          setBoards(res.data);
+          setSelectedBoard(res.data[0]); // 🚀 Definir primeiro quadro automaticamente
+        } else {
+          setBoards([]);
+          setSelectedBoard(null);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  
+    fetchQuadros();
+  }, []);
+  
   const handleCreateTarefa = async () => {
     try {
-      console.log(NewTarefa);
-      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , NewTarefa.userId, NewTarefa.status);
-      console.log(data.status);
+      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , NewTarefa.userId, selectedDroppableId, NewTarefa.nota);
       if (data.status === 200) {
         alert("Tarefa cadastrado com sucesso");
+        setNewTarefa({ titulo: "", descricao: "", userId: "", status: "", nota: "" });
         setShowModal(false);
-        fechTarefasByUserId(NewTarefa.userId); // Refresh tasks after creating a new one
-      } else if (data.status === '409') {
-        setNewTarefa({ titulo: "", descricao: "", userId: "", status: "" });
+        fechTarefasByQuadroId(selectedBoard.id); 
+      } else if (data.status === 409) {
+        setNewTarefa({ titulo: "", descricao: "", userId: "", status: "", nota:"" });
         alert("Tarefa já cadastrado");
         return;
       }
@@ -72,6 +122,16 @@ const Tarefas = () => {
     }
   };
 
+  const handleUpdateStatusTarefa = async (id, status) => {
+    try {
+      const data = await UpdateStatusTarefa(id, status);
+      if (data.status === 200) {
+        fechTarefasByQuadroId(selectedBoard.id);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
   const onDragEnd = (result) => {
     if (!result.destination) return; // Se não houver destino, não faz nada
 
@@ -84,9 +144,13 @@ const Tarefas = () => {
     setLists(result.source.droppableId, sourceList);
     setLists(result.destination.droppableId, destinationList);
 
-    console.log("Tarefa movida de", result.source.droppableId, "para", result.destination.droppableId);
+    // Pegando o ID da task que está sendo movida
+    const movedTaskId = movedTask.id;
+    const destinationStatus = result.destination.droppableId;
+    handleUpdateStatusTarefa(movedTaskId, destinationStatus);
+    // Atualizando o status da tarefa
+    // console.log("Tarefa " + movedTaskId + " movida de", result.source.droppableId, "para", result.destination.droppableId);
   };
-
   const TaskColumn = ({ title, tasks, droppableId, bgColor = "bg-light", textColor = "text-dark" }) => (
     <div className="col-md-4">
       <div className={`p-2 border rounded ${bgColor}`}>
@@ -100,17 +164,23 @@ const Tarefas = () => {
                 <Draggable key={task.id} draggableId={String(task.id)} index={index}>
                   {(provided) => (
                     <div
-                      className="list-group-item list-group-item-action shadow-sm mb-2 bg-light"
+                      className="list-group-item list-group-item-action shadow-sm mb-2 bg-light fw-bold"
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                       onClick={() => {
                         setNewTarefa(task);
                         setShowModal(true);
-                      }}
-                    >
-                      {task.titulo}
-                      <span className="float-end" style={{ cursor: "pointer" }} onClick={() => {
+                        handleEditTarefa(task.id);
+                        }}
+                      >
+                        {task.titulo}
+                        {task.nota && (
+                        <div className="text-muted ">
+                          <span className="fw-bold">Nota:</span> {task.nota}
+                        </div>
+                        )}
+                        <span className="float-end" style={{ cursor: "pointer" }} onClick={() => {
                         setNewTarefa(task);
                         setShowModal(true);
                       }}>⋮</span>
@@ -122,7 +192,12 @@ const Tarefas = () => {
             </div>
           )}
         </Droppable>
-        <button className="btn bg-light w-100 mt-2" onClick={() => setShowModal(true)}>Adicionar tarefa</button>
+        <button className="btn bg-light w-100 mt-2 fw-bold" 
+          onClick={() => {
+                          setShowModal(true);
+                          setSelectedDroppableId(droppableId);}}
+        >Adicionar tarefa
+        </button>
       </div>
     </div>
   );
@@ -157,8 +232,28 @@ const Tarefas = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4">     
       <h3 className="text-center">📝 Lista de Tarefas</h3>
+      <div className="text-left mb-3">
+        <select
+          value={selectedBoard?.id || ""} // Evita erro inicial
+          onChange={(e) => {
+            const selectedId = e.target.value; // Mantém como string se necessário
+            const newBoard = boards.find((board) => board.id.toString() === selectedId); 
+            if (newBoard) {
+              setSelectedBoard(newBoard);
+            }
+          }}
+          className="form-select w-auto d-inline-block"
+        >
+          <option value="0">Selecione um quadro</option>
+          {boards.map((board) => (
+            <option key={board.id} value={board.id}>
+              {board.nome}
+            </option>
+          ))}
+        </select>
+      </div>
       <DragDropContext onDragEnd={onDragEnd}>
         <main className="row">
           {/* Coluna Tarefas a Fazer */}
@@ -168,17 +263,17 @@ const Tarefas = () => {
           <TaskColumn title="Tarefas em andamento" tasks={inProgressTasks} bgColor="bg-warning" droppableId="1" />
 
           {/* Coluna Tarefas Concluídas */}
-          <TaskColumn title="Tarefas concluídas" tasks={doneTasks} droppableId="2" bgColor="bg-success" textColor="text-white" />
+          <TaskColumn title="Tarefas concluídas" tasks={doneTasks} bgColor="bg-success" droppableId="2" />
         </main>
       </DragDropContext>
 
-      {/* Modal de Cadastro */}
+      {/* Modal de Cadastro de Tarefas */}
       <Modal
         show={showModal}
-        onShow={fetchUsers}
+        onShow={fetchQuadros}
         onHide={() => {
           setShowModal(false);
-          setNewTarefa({ titulo: "", descricao: "", userId: "", status:"" });
+          setNewTarefa({ titulo: "", descricao: "", status:"", nota: "" });
         }}
       >
         <Modal.Header closeButton>
@@ -204,34 +299,12 @@ const Tarefas = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Usuário</Form.Label>
-              <Form.Select
-                value={NewTarefa.userId || ""}
-                onChange={(e) => setNewTarefa({ ...NewTarefa, userId: e.target.value })}
-              >
-                <option value="">Selecione um usuário</option>
-                {users.length > 0 ? (
-                  users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.nome}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>Carregando usuários...</option>
-                )}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Select
-                value={NewTarefa.status || ""}
-                onChange={(e) => setNewTarefa({ ...NewTarefa, status: e.target.value })}
-              >
-                <option value="">Selecione um status</option>
-                <option value="0">A fazer</option>
-                <option value="1">Em andamento</option>
-                <option value="2">Concluído</option>
-              </Form.Select>
+              <Form.Label>Nota</Form.Label>
+              <Form.Control
+                type="text"
+                value={NewTarefa.nota}
+                onChange={(e) => setNewTarefa({ ...NewTarefa, nota: e.target.value })}
+              />
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -240,12 +313,12 @@ const Tarefas = () => {
             variant="secondary"
             onClick={() => {
               setShowModal(false);
-              setNewTarefa({ titulo: "", descricao: "", userId: "", status: "" });
+              setNewTarefa({ titulo: "", descricao: "", status: "", nota: "" });
             }}
           >
             Fechar
           </Button>
-          <Button variant="primary" onClick={handleCreateTarefa}>
+          <Button variant="primary" onClick={NewTarefa.id ? handleUpdateTarefa : handleCreateTarefa}>
             Salvar
           </Button>
         </Modal.Footer>

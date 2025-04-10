@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using To_Do_List.Server;
 using To_Do_List.Server.Data;
 using To_Do_List.Server.Services;
+using To_Do_List.Server.Services.Quadros;
 using To_Do_List.Server.Services.Security;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<ITarefasService, TarefasService>();
 builder.Services.AddScoped<ISecurityService, SecurityService>();
+builder.Services.AddScoped<IQuadroService, QuadroService>();
 var MyAllowSpecificOrigins = "_myallowspecificorigins";
 builder.Services.AddCors(options =>
 {

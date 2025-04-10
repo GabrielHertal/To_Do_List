@@ -4,7 +4,7 @@ import Routes from './routes.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import { Validate_Token } from './services/api.js';
+import { Validate_Token } from './services/security/api.js';
 
 const App = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const App = () => {
       const token = localStorage.getItem("AuthToken");
       if (!token) 
       {
-        navigate("/");
+        navigate("/login");
         return;
       }
       try {
@@ -22,19 +22,23 @@ const App = () => {
       if (response.statusCode === 401) 
       {
         localStorage.removeItem("AuthToken");
-        navigate("/");
+        localStorage.removeItem("UserID");
+        localStorage.removeItem("UserName");
+        navigate("/login");
         return;
       }
       else 
       {
-        navigate("/home");
+        navigate("/");
       }
       } 
       catch (error) 
       {
         localStorage.removeItem("AuthToken");
+        localStorage.removeItem("UserID");
+        localStorage.removeItem("UserName");
         console.log("Erro ao validar token:" + error);
-        navigate("/");
+        navigate("/login");
       }
     };
     checkToken();

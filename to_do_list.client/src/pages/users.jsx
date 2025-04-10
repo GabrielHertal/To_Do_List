@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Button, Form, Pagination, Modal } from "react-bootstrap";
-import { GetUsers, Register, GetUserById, DeleteUser, UpdateUserById } from "../services/api";
+import { GetUsers, Register, GetUserById, DeleteUser, UpdateUserById } from "../services/users/api";
 const Usuários = () => {
     const [users, setUsers] = useState([]); // Lista de usuários
     const [showModal, setShowModal] = useState(false); // Controle do modal
@@ -53,15 +53,20 @@ const Usuários = () => {
 
     // Editar usuário
     const handleEditUser = async (id) => {
-        const userToEdit = await GetUserById(id);
-        setNewUser({ id: userToEdit.data.id, name: userToEdit.data.nome, email: userToEdit.data.email });
-        setShowModal(true);
+        try{
+            const userToEdit = await GetUserById(id);
+            setNewUser({ id: userToEdit.data.id, name: userToEdit.data.nome, email: userToEdit.data.email });
+            setShowModal(true);
+        }
+        catch (error) {
+            console.log(error);
+            alert(error);
+        }
     };
 
     const handleUpdateUser = async () => {
         try {
             const data = await UpdateUserById(newUser.id, newUser.email, newUser.name, newUser.password);
-            console.log(data);  
             if (data.status === 200) {
                 setShowModal(false);
                 fetchUsers();

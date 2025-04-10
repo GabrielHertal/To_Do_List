@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css'; 
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import { Register } from '../services/api';
+import { Register } from '../services/users/api';
 
 function RegisterAplication() {
     const [email, setEmail] = useState("");
@@ -27,14 +27,12 @@ function RegisterAplication() {
                 setPassword('');
                 setName('');
                 navigate("/");
-                console.clear();
             }
             else if (data.status === '409') {
                 alert("Usuário ja cadastrado");
                 setEmail('');
                 setPassword('');
                 setName('');
-                console.clear();
                 return;
             }
         } catch (error) {

@@ -5,25 +5,23 @@ import Home from './pages/home';
 import Tarefas from './pages/tarefas';
 import Login from './pages/login';
 import Register from './pages/register';
-import Usuários from './pages/users';
+import Usuarios from './pages/users';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('AuthToken');
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
-  return children;
+  return token ? children : <Navigate to="/login" replace />;
 };
 
 function AppRoutes() {
   return (
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/users" element={< ProtectedRoute><Usuários /></ProtectedRoute>} />
-        <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>}/>
-        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>}/>
-      </Routes>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/users" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+      <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+    </Routes>
   );
 }
+
 export default AppRoutes;

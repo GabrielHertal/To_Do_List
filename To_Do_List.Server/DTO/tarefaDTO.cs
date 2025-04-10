@@ -7,5 +7,6 @@
         public DateTime? data_criacao { get; set; } 
         public int fkidusuario { get; set; }
         public char status { get; set; }
+        public string nota { get; set; } = default!;
     }
 }

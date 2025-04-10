@@ -86,7 +86,7 @@ namespace To_Do_List.Server.Controllers
                 int result = await _user.UpdateUserByIdAsync(id, user.Email, user.Senha, user.Nome);
                 if (result == 200)
                 {
-                    return Ok(new { Message = "Usuário atualizado com sucesso.", Status = "200" });
+                    return Ok(new { Message = "Usuário atualizado com sucesso!", Status = "200" });
                 }
                 else
                 {
@@ -95,7 +95,7 @@ namespace To_Do_List.Server.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(new { Message = "Erro aqui" + e.Message });
+                return BadRequest(new { Message = "Erro: " + e.Message });
             }
         }
     }

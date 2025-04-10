@@ -11,14 +11,12 @@ namespace To_Do_List.Server.Models
         [StringLength(30, ErrorMessage = "O título da tarefa deve conter o máximo 30 caracteres")]
         public required string Titulo { get; set; }
         public string? Descricao { get; set; }
+        public string? Nota { get; set; }
         [Required]
         public DateTime DataCriacao { get; set; }
         public DateTime? DataConclusao { get; set; }
         [Required]
         [Display(Name = "A FAZER - 0, FAZENDO - 1, CONCLUIDA - 2")]
         public char Status { get; set; }
-        [ForeignKey("Users")]
-        public int FkIdUsuario { get; set; }
-        public Users? Users { get; set; }
     }
 }

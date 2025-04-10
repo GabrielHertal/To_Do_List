@@ -16,12 +16,12 @@ namespace To_Do_List.Server.Controllers
             _tarefa = tarefa;
         }
 
-        [HttpGet("GetTarefasByUser/{id}")]
-        public async Task<ActionResult<List<Tarefas>>> GetTarefasByUser(int id)
+        [HttpGet("GetTarefasByQuadro/{id}")]
+        public async Task<ActionResult<List<Tarefas>>> GetTarefasByQuadro(int id)
         {
             try
             {
-                var tarefas = await _tarefa.GetTarefasByUserAsync(id);
+                var tarefas = await _tarefa.GetTarefasByQuadroAsync(id);
                 return Ok(tarefas);
             }
             catch (Exception e)
@@ -34,7 +34,7 @@ namespace To_Do_List.Server.Controllers
         {
             try
             {
-                int result = await _tarefa.CreateTarefaAsync(tarefaDTO.titulo, tarefaDTO.descricao, tarefaDTO.fkidusuario, tarefaDTO.status, DateTime.UtcNow);
+                int result = await _tarefa.CreateTarefaAsync(tarefaDTO.titulo, tarefaDTO.descricao, tarefaDTO.fkidusuario, tarefaDTO.status, DateTime.UtcNow, tarefaDTO.nota);
                 if (result == 201)
                 {
                     return Ok(new { Message = "Tarefa criada com sucesso!", Status = 201 });
@@ -51,6 +51,59 @@ namespace To_Do_List.Server.Controllers
             catch (Exception e)
             {
                 return BadRequest($"Falha ao criar {e.Message}");
+            }
+        }
+        [HttpGet("GetTarefaByIDAsync/{id}")]
+        public async Task<ActionResult> GetTarefaById(int id)
+        {
+            try
+            {
+                var tarefa = await _tarefa.GetTarefaByIdAsync(id);
+                return Ok(tarefa);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new { Message = e.Message });
+            }
+        }
+        [HttpPut("UpdateTarefa/{id}")]
+        public async Task<ActionResult> UpdateTarefaByIdAsync(int id, [FromBody] tarefaDTO tarefa)
+        {
+            try
+            {
+                int result = await _tarefa.UpdateTarefaByIdAsync(id, tarefa.titulo, tarefa.descricao, tarefa.fkidusuario, tarefa.status, tarefa.nota);
+                if (result == 200)
+                {
+                    return Ok(new { Message = "Tarefa atualizada com sucesso!", Status = "200" });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Erro ao atualizar a tarefa!", ErrorCode = result });
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new { Message = "Erro: " + e.Message });
+            }
+        }
+        [HttpPut("UpdateStatusTarefa/{id}")]
+        public async Task<ActionResult> UpdateStatusTarefaAsync(int id, [FromBody] UpdataStatusDTO statusdto)
+        {
+            try
+            {
+                int result = await _tarefa.UpdateStatusTarefaAsync(id, statusdto.Status);
+                if(result == 200)
+                {
+                    return Ok(new { Message = "Status da tarefa atualizado com sucesso!", Status = "200" });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Erro ao atualizar Status da Tarefa " + id, ErrorCode = result });
+                }
+            }
+            catch(Exception e)
+            {
+                return BadRequest(new { Message = "Erro " + e.Message });
             }
         }
     }

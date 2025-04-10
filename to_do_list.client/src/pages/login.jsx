@@ -4,9 +4,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "../css/Login.css";
-import { login } from "../services/api"; // Corrigido
+import { login } from "../services/security/api"; 
 
-function LoginAplication() {
+function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
@@ -25,7 +25,7 @@ function LoginAplication() {
                 return;
             }
             localStorage.setItem("AuthToken", data.token);
-            navigate("/home"); // Redireciona após o login
+            navigate("/"); // Redireciona após o login
         } catch (error) {
             setError(error.message);
         } finally {
@@ -94,4 +94,4 @@ function LoginAplication() {
         </section>
     );
 }
-export default LoginAplication;
+export default Login;
