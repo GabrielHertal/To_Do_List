@@ -90,7 +90,7 @@ const Tarefas = () => {
         const res = await GetQuadrosByUserId(userid);
         if (res && Array.isArray(res.data) && res.data.length > 0) {
           setBoards(res.data);
-          setSelectedBoard(res.data[0]); // 🚀 Definir primeiro quadro automaticamente
+          setSelectedBoard(res.data[-1]); // 🚀 Definir primeiro quadro automaticamente
         } else {
           setBoards([]);
           setSelectedBoard(null);
@@ -246,7 +246,7 @@ const Tarefas = () => {
           }}
           className="form-select w-auto d-inline-block"
         >
-          <option value="0">Selecione um quadro</option>
+          <option value="-1">Selecione um quadro</option>
           {boards.map((board) => (
             <option key={board.id} value={board.id}>
               {board.nome}

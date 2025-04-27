@@ -41,7 +41,7 @@ export const UpdateQuadroById = async (id, nome) => {
 }
 export const DeleteQuadro = async (id) => {
     try{
-        const response = await api.delete(`/Quadro/DeleteQuadro/${id}`); 
+        const response = await api.delete(`/Quadro/DeleteQuadroAsync/${id}`); 
         return response;
     } catch (error) {
         return error.response.data;

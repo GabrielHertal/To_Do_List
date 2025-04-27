@@ -54,7 +54,7 @@ namespace To_Do_List.Server.Services.Quadros
             {
                 var quadros = await _context.Inter_Quadro_Users
                                              .Include(q => q.Quadro)
-                                             .Where(q => q.Fk_Id_Users == id_user && q.Quadro != null && q.Quadro.Fk_Id_User_Dono != id_user)
+                                             .Where(q => q.Fk_Id_Users == id_user && q.Quadro != null)
                                              .Select(q => q.Quadro!)
                                              .ToListAsync();
                 return quadros;
@@ -92,7 +92,8 @@ namespace To_Do_List.Server.Services.Quadros
                                             {
                                                 id_user = q.Users!.Id,
                                                 nome_user = q.Users.Nome,
-                                                id_owner = q.Quadro!.Fk_Id_User_Dono
+                                                id_owner = q.Quadro!.Fk_Id_User_Dono,
+                                                id_quadro = q.Quadro.Id
                                             })
                                             .ToListAsync();
                 return membros;
@@ -119,31 +120,42 @@ namespace To_Do_List.Server.Services.Quadros
                 };
 
                 await _context.Quadro.AddAsync(quadro);
-                await _context.SaveChangesAsync(); // Aqui o ID será gerado
+                await _context.SaveChangesAsync();
 
                 var inter_quadro = new Inter_Quadro_Users
                 {
-                    Fk_Id_Quadro = quadro.Id, // Agora o Id está preenchido
+                    Fk_Id_Quadro = quadro.Id,
                     Fk_Id_Users = id_user
                 };
 
                 await _context.Inter_Quadro_Users.AddAsync(inter_quadro);
                 await _context.SaveChangesAsync();
 
-                return 201; // Criado com sucesso
+                return 201;
             }
-
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
         }
-
-        public Task<Quadro> DeleteQuadroAsync(int id)
+        public async Task<int> DeleteQuadroAsync(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if(await QuadroTarefa(id))
+                {
+                    return 409;
+                }
+                var quadro = await _context.Quadro.FindAsync(id);
+                _context.Quadro.Remove(quadro!);
+                await _context.SaveChangesAsync();
+                return 200;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
-
         public async Task<int> UpdateQuadroAsync(int id, string nome)
         {
             try
@@ -158,7 +170,7 @@ namespace To_Do_List.Server.Services.Quadros
                 await _context.SaveChangesAsync();
                 return 200;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
@@ -269,6 +281,10 @@ namespace To_Do_List.Server.Services.Quadros
         private async Task<bool> QuadroExists(string nome)
         {
             return await _context.Quadro.AnyAsync(e => e.Nome == nome);
+        }
+        private async Task<bool> QuadroTarefa(int id)
+        {
+            return await _context.Inter_Tarefa_Quadro.AnyAsync(e => e.Fk_Id_Quadro == id);
         }
     }
 }

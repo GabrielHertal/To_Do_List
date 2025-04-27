@@ -7,7 +7,7 @@ namespace To_Do_List.Server.Services.Quadros
     {
         Task<int> CreateQuadroAsync(string nome, int id_user_owner);
         Task<int> UpdateQuadroAsync(int id , string nome);
-        Task<Quadro> DeleteQuadroAsync(int id);
+        Task<int> DeleteQuadroAsync(int id);
         Task <List<Quadro>> GetAllQuadrosAsync();
         Task <Quadro> GetQuadroByIdAsync(int id);
         Task<int> VinculaQuadroUserAsync(string convite, int id_user);

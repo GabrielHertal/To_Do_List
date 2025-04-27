@@ -7,14 +7,13 @@ const Quadros = () => {
     const [participaquadros, setMyQuadrosParticipante] = useState([]); // Lista de usuários
     const [showModal, setShowModal] = useState(false); // Controle do modal
     const [showModalConvite, setShowModalConvite] = useState(false);
-    const [membrosquadro, setMembrosQuadro] = useState({ id: "", nome: "" }); // Novo usuário
+    const [membrosquadro, setMembrosQuadro] = useState({ id_user: "", nome_user: "", id_owner : "", id_quadro : "" }); // Novo usuário
     const [showModalIngressaQuadro, setShowModalIngressaQuadro] = useState(false);
     const [showModalMembrosQuadro, setShowModalMembrosQuadro] = useState(false);
-    const [newConvite, setNewConvite] = useState({ codigo: "" });
+    const [newConvite, setNewConvite] = useState({ codigo: "", tipo: "" }); // Novo convite
     const [newQuadro, setNewQuadro] = useState({ id: "", nome: "" }); // Novo usuário
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1); // Página atual
     const totalPages = Math.ceil(myquadros.length / 10); // Assuming 10 users per page
-
     // Carregar usuários da API
     const fetchQuadrosOwner = async () => {
         try {
@@ -101,8 +100,15 @@ const Quadros = () => {
     const handleDeleteQuadro = async (id) => {
         try {
             const data = await DeleteQuadro(id);
+            if (data.status === 404) {
+                alert(data.Message);               
+                return;
+            } else if (data.status === 409) {
+                alert(data.Message);               
+                return;
+            }
             if (data.status === 200) {
-                alert("Usuário deletado com sucesso");           
+                alert("Quadro deletado com sucesso");           
                 fetchQuadrosOwner();     
             }
         } catch (error) {
@@ -112,7 +118,6 @@ const Quadros = () => {
     // Gera Código de Convite
     const handleGeraCodigoConvite = async (id) => {
         try {
-            const UserId = localStorage.getItem("UserID");
             const data = await CreateCodigoConvite(6);
             if (data.status === 200) {
                 setNewConvite({ codigo: data.data });
@@ -146,12 +151,12 @@ const Quadros = () => {
             const quadroSelecionado = (myquadros && myquadros.find((quadro) => quadro.id === id)) 
                 || (participaquadros && participaquadros.find((quadro) => quadro.id === id));
             if (quadroSelecionado) {
-                setNewConvite({ codigo: quadroSelecionado.codigo_Convite });
-                const buttonvincula = document.getElementById("vincular");
-                if (buttonvincula) {
-                    buttonvincula.style.display = "none";
-                }
+                setNewConvite({ codigo: quadroSelecionado.codigo_Convite, tipo: "visualiza" });
                 setShowModalConvite(true);
+                if(!quadroSelecionado.codigo_Convite){
+                    alert("Código de convite não encontrado!");
+                    return;
+                }
             } else {
                 console.log("Quadro não encontrado!");
                 alert("Quadro não encontrado!");
@@ -208,6 +213,33 @@ const Quadros = () => {
                 return;
             }
             fetchQuadrosParticipante();
+            setShowModalMembrosQuadro(false);
+            setMembrosQuadro({ id: "", nome: "" });
+        }
+        catch(error){
+            console.log(error);
+            alert(error);   
+        }
+    };
+    // Remover Usuário do Quadro
+    const handleRemoverUserQuadro = async (id_quadro, id_user, id_owner) => {
+        try{
+            if(id_owner == localStorage.getItem("UserID")){
+                handleDeleteQuadro(id_quadro);
+            }   
+            if(id_user == id_owner){
+                alert("Você não pode remover o dono do quadro!");
+                return;
+            }
+            const data = await DesvinculaQuadroUser(id_quadro, id_user);
+            if(data.status == 404){
+                alert("Quadro não encontrado!");
+                return;
+            }
+            fetchQuadrosParticipante();
+            setShowModalMembrosQuadro(false);
+            setMembrosQuadro({ id: "", nome: "" });
+            handleVisualizaMembrosQuadro(id_quadro);
         }
         catch(error){
             console.log(error);
@@ -247,8 +279,8 @@ const Quadros = () => {
                                             Visualizar Código de Convite
                                         </Button>
                                     ) : (
-                                        <Button variant="info" onClick={() => handleGeraCodigoConvite(quadro.id)}>
-                                            Gerar Código de Convite
+                                        <Button variant="success" onClick={() => handleGeraCodigoConvite(quadro.id)}>
+                                            Gerar Código de Convite 
                                         </Button>
                                     )}
                                     <Button variant="warning" onClick={() => handleEditQuadro(quadro.id)}>
@@ -386,21 +418,40 @@ const Quadros = () => {
                 <Modal.Body>
                     <Form.Group className="mb-3">
                         <Form.Label>Convite</Form.Label>
-                        <Form.Control type="text" value={newConvite.codigo} readOnly />
+                        {newConvite.tipo == "visualiza" ? (
+                            <Form.Control 
+                                type="text" 
+                                value={newConvite.codigo} readOnly 
+                            />
+                        ) : (
+                            <Form.Control 
+                                type="text" 
+                                value={newConvite.codigo} 
+                                onChange={(e) => setNewConvite({ ...newConvite, codigo: e.target.value })} 
+                            />
+                        )}
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" 
+                    <Button 
+                        variant="secondary" 
                         onClick={() => {
                             setShowModalConvite(false);
                             setNewConvite({ codigo: "" });
                             setNewQuadro({ id: "" });
-                        }}>
+                        }}
+                    >
                         Fechar
                     </Button>
-                    <Button id="vincular" variant="primary" onClick={() => handleVinculaCodigoConviteQuadro(false)}>
-                        Vincular ao Quadro
-                    </Button>
+                    {newConvite.tipo === "visualiza" ? null : (
+                        <Button 
+                            id="vincular" 
+                            variant="primary" 
+                            onClick={() => handleVinculaCodigoConviteQuadro(false)}
+                        >
+                            Vincular ao Quadro
+                        </Button>
+                    )}
                 </Modal.Footer>
             </Modal>
             {/* Modal de para ingressar em um quadro */}
@@ -462,7 +513,8 @@ const Quadros = () => {
                                             {membro.id_owner == membro.id_user ? " (Dono)" : ""}
                                         </td>
                                         <td>
-                                            <Button variant="danger" onClick={() => handleDeleteQuadro(membro.id_user)}>
+                                            <Button variant="danger" onClick={() => handleRemoverUserQuadro(membro.id_quadro,membro.id_user, membro.id_owner)}>
+                                                <i className="bi bi-trash"></i>  {/* Ícone de lixeira */}
                                                 Remover
                                             </Button>
                                         </td>
@@ -485,4 +537,4 @@ const Quadros = () => {
         </div>
     );
 };
-export default Quadros;
+export default Quadros;''

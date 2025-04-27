@@ -202,5 +202,26 @@ namespace To_Do_List.Server.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+        [HttpDelete("DeleteQuadroAsync/{id}")]
+        public async Task<ActionResult<int>> DeleteQuadroAsync(int id)
+        {
+            try
+            {
+                var result = await _quadro.DeleteQuadroAsync(id);
+                if (result == 404)
+                {
+                    return BadRequest(new { Message = "Quadro não encontrado", Status = "404" });
+                }
+                if (result == 409)
+                {
+                    return BadRequest(new { Message = "Quadro não pode ser excluído, pois possui tarefas vinculadas!", Status = "409" });
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
     }
 }
