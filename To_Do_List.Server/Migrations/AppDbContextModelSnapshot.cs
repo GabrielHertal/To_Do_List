@@ -24,11 +24,19 @@ namespace To_Do_List.Server.Migrations
 
             modelBuilder.Entity("To_Do_List.Server.Models.Inter_Quadro_Users", b =>
                 {
+                    b.Property<int>("Id_Inter_Quadro_Users")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id_Inter_Quadro_Users"));
+
                     b.Property<int>("Fk_Id_Quadro")
                         .HasColumnType("integer");
 
                     b.Property<int>("Fk_Id_Users")
                         .HasColumnType("integer");
+
+                    b.HasKey("Id_Inter_Quadro_Users");
 
                     b.HasIndex("Fk_Id_Quadro");
 
@@ -39,11 +47,19 @@ namespace To_Do_List.Server.Migrations
 
             modelBuilder.Entity("To_Do_List.Server.Models.Inter_Tarefa_Quadro", b =>
                 {
+                    b.Property<int>("Id_Inter_Tarefa_Quadro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id_Inter_Tarefa_Quadro"));
+
                     b.Property<int>("Fk_Id_Quadro")
                         .HasColumnType("integer");
 
                     b.Property<int>("Fk_Id_Tarefa")
                         .HasColumnType("integer");
+
+                    b.HasKey("Id_Inter_Tarefa_Quadro");
 
                     b.HasIndex("Fk_Id_Quadro");
 

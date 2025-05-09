@@ -67,7 +67,6 @@ function Home() {
             setContent("Tela Inicial!");
         }
     };
-
     return (
         <div className="container-fluid">
             <div className="row flex-nowrap">

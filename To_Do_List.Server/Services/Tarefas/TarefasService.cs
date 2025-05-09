@@ -12,7 +12,7 @@ namespace To_Do_List.Server
         {
             _context = context;
         }
-        public async Task<int> CreateTarefaAsync(string titulo, string descricao, int id_user, char status, DateTime data_criacao, string nota)
+        public async Task<int> CreateTarefaAsync(string titulo, string descricao, int id_user, char status, DateTime data_criacao, string nota, int fk_id_quadro)
         {
             try
             {
@@ -30,28 +30,40 @@ namespace To_Do_List.Server
                 };
                 await _context.Tarefas.AddAsync(tarefa);
                 await _context.SaveChangesAsync();
+
+                var inter_tarefa_quadro = new Inter_Tarefa_Quadro
+                {
+                    Fk_Id_Tarefa = tarefa.Id,
+                    Fk_Id_Quadro = fk_id_quadro
+                };
+                await _context.Inter_Tarefa_Quadro.AddAsync(inter_tarefa_quadro);
+                await _context.SaveChangesAsync();
                 return 201;
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message); 
+                throw new Exception(ex.Message);
             }
         }
-
-        public Task<Tarefas> DeleteByIdAsync(int id)
+        public async Task<int> DeleteByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var tarefa = await _context.Tarefas.FindAsync(id) ?? throw new Exception("Tarefa não encontrada");
+                _context.Tarefas.Remove(tarefa);
+                await _context.SaveChangesAsync();
+                return 201;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
         }
-
         public async Task<Tarefas> GetTarefaByIdAsync(int id)
         {
             try
             {
-                var tarefas = await _context.Tarefas.FindAsync(id);
-                if (tarefas == null)
-                {
-                    throw new Exception("Tarefa não encontrada!");
-                }
+                var tarefas = await _context.Tarefas.FindAsync(id) ?? throw new Exception("Tarefa não encontrada!");
                 return tarefas;
             }
             catch (Exception ex)
@@ -59,7 +71,6 @@ namespace To_Do_List.Server
                 throw new Exception(ex.Message);
             }
         }
-
         public async Task<List<Tarefas>> GetTarefasByQuadroAsync(int id_quadro)
         {
             try
@@ -80,18 +91,12 @@ namespace To_Do_List.Server
         {
             try
             {
-                var tarefa = await _context.Tarefas.FindAsync(id);
-                if(tarefa == null)
-                {
-                    throw new Exception("Tarefa não encontrada)");
-                }
+                var tarefa = await _context.Tarefas.FindAsync(id) ?? throw new Exception("Tarefa não encontrada)");
 
                 tarefa.Titulo = titulo;
                 tarefa.Descricao = descricao;
                 tarefa.Status = status;
                 tarefa.Nota = nota;
-
-                _context.Tarefas.Update(tarefa);
                 await _context.SaveChangesAsync();
                 return 200;
             }
@@ -104,13 +109,8 @@ namespace To_Do_List.Server
         {
             try
             {
-                var tarefa = await _context.Tarefas.FindAsync(id);
-                Console.WriteLine(tarefa);
-                if (tarefa == null)
-                {
-                    throw new Exception("Tarefa não encontrada");
-                }
-                if(tarefa.Status == '2' & status == '1' | status != '0')
+                var tarefa = await _context.Tarefas.FindAsync(id) ?? throw new Exception("Tarefa não encontrada");
+                if (tarefa.Status == '2' & status == '1' | status == '0')
                 {
                     tarefa.DataConclusao = null;
                 }
@@ -122,11 +122,25 @@ namespace To_Do_List.Server
                 tarefa.Status = Convert.ToChar(status);
                 tarefa.Id = tarefa.Id;
 
-
                 _context.Tarefas.Update(tarefa);
                 await _context.SaveChangesAsync();
                 return 200;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+        public async Task<int> AlteraTarefaQuadro(int id_tarefa, int id_quadro_novo)
+        {
+            try
+            {
+                var tarefa = await _context.Inter_Tarefa_Quadro
+                                           .FirstOrDefaultAsync(t => t.Fk_Id_Tarefa == id_tarefa) ?? throw new Exception("Tarefa não encontrada");
 
+                tarefa.Fk_Id_Quadro = id_quadro_novo;
+                await _context.SaveChangesAsync();
+                return 200;
             }
             catch (Exception e)
             {

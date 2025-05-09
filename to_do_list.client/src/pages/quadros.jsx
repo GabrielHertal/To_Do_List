@@ -12,8 +12,17 @@ const Quadros = () => {
     const [showModalMembrosQuadro, setShowModalMembrosQuadro] = useState(false);
     const [newConvite, setNewConvite] = useState({ codigo: "", tipo: "" }); // Novo convite
     const [newQuadro, setNewQuadro] = useState({ id: "", nome: "" }); // Novo usuário
-    const [currentPage, setCurrentPage] = useState(1); // Página atual
-    const totalPages = Math.ceil(myquadros.length / 10); // Assuming 10 users per page
+    const [currentPageCriados, setCurrentPageCriados] = useState(1);
+    const [currentPageParticipa, setCurrentPageParticipa] = useState(1);
+    const ITEMS_PER_PAGE_CRIADOS = 3;
+    const totalPagesCriados = Math.ceil(myquadros.length / ITEMS_PER_PAGE_CRIADOS);
+    const ITEMS_PER_PAGE_PARTICIPA = 5;
+    const totalPagesParticipa = Math.ceil(participaquadros.length / ITEMS_PER_PAGE_PARTICIPA); 
+    const startPageparticipa = Math.max(1, currentPageParticipa - Math.floor(ITEMS_PER_PAGE_PARTICIPA / 2));
+    const endPageparticipa = Math.min(currentPageParticipa, startPageparticipa + ITEMS_PER_PAGE_PARTICIPA - 1);
+    const startPagecriado = Math.max(1, currentPageCriados - Math.floor(ITEMS_PER_PAGE_CRIADOS / 2));
+    const endPagecriado = Math.min(totalPagesCriados, startPagecriado + ITEMS_PER_PAGE_CRIADOS - 1);
+
     // Carregar usuários da API
     const fetchQuadrosOwner = async () => {
         try {
@@ -266,7 +275,7 @@ const Quadros = () => {
                 </thead>
                 <tbody className="text-center">
                     {myquadros.length > 0 ? (
-                        myquadros.slice((currentPage - 1) * 10, currentPage * 10).map((quadro) => (
+                        myquadros.slice((currentPageCriados - 1) * ITEMS_PER_PAGE_CRIADOS, currentPageCriados * ITEMS_PER_PAGE_CRIADOS).map((quadro) => (
                             <tr key={quadro.id}>
                                 <td>{quadro.id}</td>
                                 <td>{quadro.nome}</td>
@@ -301,6 +310,42 @@ const Quadros = () => {
                     )}
                 </tbody>
             </Table>
+            {myquadros.length > 0 && (
+                <Pagination>
+                <Pagination.Prev
+                  disabled={currentPageCriados === 1}
+                  onClick={() => setCurrentPageCriados(currentPageCriados - 1)}
+                />
+              
+                {startPagecriado > 1 && <Pagination.Item onClick={() => setCurrentPageCriados(1)}>1</Pagination.Item>}
+                {startPagecriado > 2 && <Pagination.Ellipsis disabled />}
+              
+                {Array.from({ length: endPagecriado - startPagecriado + 1 }, (_, idx) => {
+                  const page = startPagecriado + idx;
+                  return (
+                    <Pagination.Item
+                      key={page}
+                      active={page === currentPageCriados}
+                      onClick={() => setCurrentPageCriados(page)}
+                    >
+                      {page}
+                    </Pagination.Item>
+                  );
+                })}
+              
+                {endPagecriado < totalPagesCriados - 1 && <Pagination.Ellipsis disabled />}
+                {endPagecriado < totalPagesCriados && (
+                  <Pagination.Item onClick={() => setCurrentPageCriados(totalPagesCriados)}>
+                    {totalPagesCriados}
+                  </Pagination.Item>
+                )}
+              
+              <Pagination.Next
+                disabled={currentPageCriados == totalPagesCriados}
+                onClick={() => setCurrentPageCriados(currentPageCriados + 1)}
+                />
+              </Pagination>
+            )}
              {/* Quadros em que o usuário esta vinculado  */}
             <h3 className="text-center">Quadros Participante</h3>
             <div className="d-flex justify-content-end mb-3">
@@ -319,7 +364,7 @@ const Quadros = () => {
                 </thead>
                 <tbody className="text-center">
                     {participaquadros.length > 0 ? (
-                        participaquadros.slice((currentPage - 1) * 10, currentPage * 10).map((participaquadro) => (
+                        participaquadros.slice((currentPageParticipa - 1) * ITEMS_PER_PAGE_PARTICIPA, currentPageParticipa * ITEMS_PER_PAGE_PARTICIPA).map((participaquadro) => (
                             <tr key={participaquadro.id}>
                                 <td>{participaquadro.id}</td>
                                 <td>{participaquadro.nome}</td>
@@ -352,18 +397,41 @@ const Quadros = () => {
                 </tbody>
             </Table>
             {/* Paginação */}
-            {myquadros.length > 0 && (
+            {participaquadros.length > 0 && (
                 <Pagination>
-                    {[...Array(totalPages).keys()].map((page) => (
-                        <Pagination.Item
-                            key={page + 1}
-                            active={page + 1 === currentPage}
-                            onClick={() => setCurrentPage(page + 1)}
-                        >
-                            {page + 1}
-                        </Pagination.Item>
-                    ))}
-                </Pagination>
+                <Pagination.Prev
+                  disabled={currentPageParticipa === 1}
+                  onClick={() => setCurrentPageParticipa(currentPageParticipa - 1)}
+                />
+              
+                {startPageparticipa > 1 && <Pagination.Item onClick={() => setCurrentPageParticipa(1)}>1</Pagination.Item>}
+                {startPageparticipa > 2 && <Pagination.Ellipsis disabled />}
+              
+                {Array.from({ length: endPageparticipa - startPageparticipa + 1 }, (_, idx) => {
+                  const page = startPageparticipa + idx;
+                  return (
+                    <Pagination.Item
+                      key={page}
+                      active={page === currentPageParticipa}
+                      onClick={() => setCurrentPageParticipa(page)}
+                    >
+                      {page}
+                    </Pagination.Item>
+                  );
+                })}
+              
+                {endPageparticipa < totalPagesParticipa - 1 && <Pagination.Ellipsis disabled />}
+                {endPageparticipa < totalPagesParticipa && (
+                  <Pagination.Item onClick={() => setCurrentPageParticipa(totalPagesParticipa)}>
+                    {totalPagesParticipa}
+                  </Pagination.Item>
+                )}
+              
+              <Pagination.Next
+                disabled={currentPageParticipa == currentPageParticipa}
+                onClick={() => setCurrentPageParticipa(currentPageParticipa + 1)}
+                />
+              </Pagination>
             )}
             {/* Modal de Cadastro */}
             <Modal
@@ -403,7 +471,7 @@ const Quadros = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
-            {/* Modal de para visulizar código gerado */}
+            {/* Modal de para visulizar código gerado */}   
             <Modal 
                 show={showModalConvite} 
                 onHide={() =>{ 
@@ -418,7 +486,7 @@ const Quadros = () => {
                 <Modal.Body>
                     <Form.Group className="mb-3">
                         <Form.Label>Convite</Form.Label>
-                        {newConvite.tipo == "visualiza" ? (
+                        {newConvite.tipo === "visualiza" ? (
                             <Form.Control 
                                 type="text" 
                                 value={newConvite.codigo} readOnly 
@@ -537,4 +605,4 @@ const Quadros = () => {
         </div>
     );
 };
-export default Quadros;''
+export default Quadros;

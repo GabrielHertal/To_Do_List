@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using To_Do_List.Server.Data;
 using To_Do_List.Server.DTO;
@@ -20,11 +21,7 @@ namespace To_Do_List.Server.Services.Quadros
                 var quadro = await _context.Quadro
                                            .Where(q => q.Ativo == 1)
                                            .OrderBy(q => q.Id)
-                                           .ToListAsync();
-                if (quadro == null || quadro.Count == 0)
-                {
-                    throw new Exception("Nenhum quadro encontrado");
-                }
+                                           .ToListAsync() ?? throw new Exception("Nenhum quadro encontrado");
                 return quadro;
             }
             catch (Exception ex)
@@ -36,11 +33,7 @@ namespace To_Do_List.Server.Services.Quadros
         {
             try
             {
-                var quadro = await _context.Quadro.FindAsync(id);
-                if (quadro == null)
-                {
-                    throw new Exception("Quadro não encontrado!");
-                }
+                var quadro = await _context.Quadro.FindAsync(id) ?? throw new Exception("Quadro não encontrado!");
                 return quadro;
             }
             catch (Exception ex)
@@ -56,7 +49,7 @@ namespace To_Do_List.Server.Services.Quadros
                                              .Include(q => q.Quadro)
                                              .Where(q => q.Fk_Id_Users == id_user && q.Quadro != null)
                                              .Select(q => q.Quadro!)
-                                             .ToListAsync();
+                                             .ToListAsync() ?? throw new Exception("Quadro não encontrado!");
                 return quadros;
             }
             catch (Exception ex)
@@ -72,7 +65,7 @@ namespace To_Do_List.Server.Services.Quadros
                                             .Include(q => q.Quadro)
                                             .Where(q => q.Fk_Id_Users == id_user_owner && q.Quadro != null && q.Quadro.Fk_Id_User_Dono == id_user_owner)
                                             .Select(q => q.Quadro!)
-                                            .ToListAsync();
+                                            .ToListAsync() ?? throw new Exception("Quadro não encontrado!");
                 return quadros;
             }
             catch (Exception ex)
@@ -95,7 +88,7 @@ namespace To_Do_List.Server.Services.Quadros
                                                 id_owner = q.Quadro!.Fk_Id_User_Dono,
                                                 id_quadro = q.Quadro.Id
                                             })
-                                            .ToListAsync();
+                                            .ToListAsync() ?? throw new Exception("Quadro não encontrado!");
                 return membros;
             }
             catch (Exception ex)
@@ -130,7 +123,6 @@ namespace To_Do_List.Server.Services.Quadros
 
                 await _context.Inter_Quadro_Users.AddAsync(inter_quadro);
                 await _context.SaveChangesAsync();
-
                 return 201;
             }
             catch (Exception ex)
@@ -160,11 +152,7 @@ namespace To_Do_List.Server.Services.Quadros
         {
             try
             {
-                var quadro = await _context.Quadro.FindAsync(id);
-                if (quadro == null)
-                {
-                    return 404;
-                }
+                var quadro = await _context.Quadro.FindAsync(id) ?? throw new Exception("Quadro não encontrado!");
                 quadro.Nome = nome;
                 _context.Quadro.Update(quadro);
                 await _context.SaveChangesAsync();
@@ -198,11 +186,7 @@ namespace To_Do_List.Server.Services.Quadros
         {
             try
             {
-                var quadro = await _context.Quadro.FindAsync(id_quadro);
-                if (quadro == null)
-                {
-                    return 404;
-                }
+                var quadro = await _context.Quadro.FindAsync(id_quadro) ?? throw new Exception("Quadro não encontrado!");
                 quadro.Codigo_Convite = codigo;
                 _context.Quadro.Update(quadro);
                 await _context.SaveChangesAsync();
@@ -213,6 +197,7 @@ namespace To_Do_List.Server.Services.Quadros
                 throw new Exception(ex.Message);
             }
         }
+        #region Função para criar o código convite
         public Task<string> CreateCodigoConvite(int tamanho)
         {
             const string caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -230,15 +215,13 @@ namespace To_Do_List.Server.Services.Quadros
 
             return Task.FromResult(new string(resultado));
         }
+        #endregion
         public async Task<int> VincularUserQuadroAsync(string convite, int id_user)
         {
             try
             {
-                var quadro = await _context.Quadro.FirstOrDefaultAsync(q => q.Codigo_Convite == convite);
-                if (quadro == null)
-                {
-                    return 404;
-                }
+                var quadro = await _context.Quadro.FirstOrDefaultAsync(q => q.Codigo_Convite == convite)
+                             ?? throw new Exception("404: Quasro não encontrado!");
                 int count = await _context.Inter_Quadro_Users
                                           .CountAsync(i => i.Fk_Id_Users == id_user && i.Quadro!.Id == quadro!.Id);
                 if (count > 0)
@@ -256,7 +239,11 @@ namespace To_Do_List.Server.Services.Quadros
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                if (ex.Message.StartsWith("404:"))
+                {
+                    throw new Exception("Erro 404: " + ex.Message.Substring(5));
+                }
+                throw new Exception("Erro 500: " + ex.Message);
             }
         }
         public async Task<int> DesvincularUserQuadroAsync(int id_quadro, int id_user)
@@ -264,11 +251,7 @@ namespace To_Do_List.Server.Services.Quadros
             try
             {
                 var inter_quadro = await _context.Inter_Quadro_Users
-                                                 .FirstOrDefaultAsync(i => i.Fk_Id_Quadro == id_quadro && i.Fk_Id_Users == id_user);
-                if (inter_quadro == null)
-                {
-                    return 404;
-                }
+                                                 .FirstOrDefaultAsync(i => i.Fk_Id_Quadro == id_quadro && i.Fk_Id_Users == id_user) ?? throw new Exception("Quadro não encontrado!");
                 _context.Inter_Quadro_Users.Remove(inter_quadro);
                 await _context.SaveChangesAsync();
                 return 200;

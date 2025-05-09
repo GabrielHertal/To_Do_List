@@ -41,11 +41,7 @@ namespace To_Do_List.Server
         {
             try
             {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
-                {
-                    throw new Exception("Usuário não encontrado.");
-                }
+                var user = await _context.Users.FindAsync(id) ?? throw new Exception("Usuário não encontrado!");
                 user.Ativo = 2;
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
@@ -61,11 +57,7 @@ namespace To_Do_List.Server
         {
             try
             {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
-                {
-                    throw new Exception("Usuário não encontrado.");
-                }
+                var user = await _context.Users.FindAsync(id) ?? throw new Exception("Usuário não encontrado!");
                 return user;
             }
             catch (Exception e)
@@ -83,11 +75,7 @@ namespace To_Do_List.Server
         {
             try
             {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
-                {
-                    throw new Exception("Usuário não encontrado.");
-                }
+                var user = await _context.Users.FindAsync(id) ?? throw new Exception("Usuário não encontrado!");
                 if(senha == null)
                 {
                     senha = user.Senha;
@@ -114,11 +102,7 @@ namespace To_Do_List.Server
                 var users = await _context.Users
                                           .Where(u => u.Ativo == 1)
                                           .OrderBy(u => u.Id) 
-                                          .ToListAsync();
-                if (users == null || users.Count == 0)
-                {
-                    throw new Exception("Nenhum usuário encontrado.");
-                }
+                                          .ToListAsync() ?? throw new Exception("Nenhum usuário encontrado.");
                 return users;
             }
             catch (Exception e)

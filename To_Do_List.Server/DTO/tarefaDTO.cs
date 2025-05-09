@@ -8,5 +8,6 @@
         public int fkidusuario { get; set; }
         public char status { get; set; }
         public string nota { get; set; } = default!;
+        public int fk_id_quadro { get; set; }
     }
 }

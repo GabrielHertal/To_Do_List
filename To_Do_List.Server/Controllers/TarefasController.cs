@@ -34,7 +34,7 @@ namespace To_Do_List.Server.Controllers
         {
             try
             {
-                int result = await _tarefa.CreateTarefaAsync(tarefaDTO.titulo, tarefaDTO.descricao, tarefaDTO.fkidusuario, tarefaDTO.status, DateTime.UtcNow, tarefaDTO.nota);
+                int result = await _tarefa.CreateTarefaAsync(tarefaDTO.titulo, tarefaDTO.descricao, tarefaDTO.fkidusuario, tarefaDTO.status, DateTime.UtcNow, tarefaDTO.nota, tarefaDTO.fk_id_quadro);
                 if (result == 201)
                 {
                     return Ok(new { Message = "Tarefa criada com sucesso!", Status = 201 });
@@ -104,6 +104,46 @@ namespace To_Do_List.Server.Controllers
             catch(Exception e)
             {
                 return BadRequest(new { Message = "Erro " + e.Message });
+            }
+        }
+        [HttpDelete("DeleteTarefa/{id}")]
+        public async Task<ActionResult> DeleteByIdAsync(int id)
+        {
+            try
+            {
+                int result = await _tarefa.DeleteByIdAsync(id);
+                if (result == 201)
+                {
+                    return Ok(new { Message = "Tarefa deletada com sucesso!", Status = "200" });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Erro ao deletar a tarefa!", ErrorCode = result });
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new { Message = "Erro: " + e.Message });
+            }
+        }
+        [HttpPut("AlteraTarefaQuadro/{id_tarefa}/{id_quadro_novo}")]
+        public async Task<ActionResult> AlteraTarefaQuadro(int id_tarefa, int id_quadro_novo)
+        {
+            try
+            {
+                int result = await _tarefa.AlteraTarefaQuadro(id_tarefa, id_quadro_novo);
+                if (result == 200)
+                {
+                    return Ok(new { Message = "Tarefa alterada com sucesso!", Status = "200" });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Erro ao alterar a tarefa!", ErrorCode = result });
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new { Message = "Erro: " + e.Message });
             }
         }
     }

@@ -5,6 +5,9 @@ namespace To_Do_List.Server.Models
 {
     public class Inter_Quadro_Users
     {
+        [Key]
+        [Required]
+        public int Id_Inter_Quadro_Users { get; set; }
         [ForeignKey("Users")]
         [Required]
         public int Fk_Id_Users { get; set; }

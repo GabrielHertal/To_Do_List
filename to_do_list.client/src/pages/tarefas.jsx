@@ -2,18 +2,21 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Form, Button } from "react-bootstrap";
-import { CreateTarefa, GetTarefaByQuadroId, GetTarefaById, UpdateTarefa, UpdateStatusTarefa } from "../services/tarefas/api";
+import { CreateTarefa, GetTarefaByQuadroId, GetTarefaById, UpdateTarefa, UpdateStatusTarefa, DeleteTarefa, AlteraTarefaQuadro } from "../services/tarefas/api";
 import { GetQuadrosByUserId } from "../services/quadros/api";
 
 const Tarefas = () => {
   const [showModal, setShowModal] = useState(false); // Controle do modal
-  const [NewTarefa, setNewTarefa] = useState({ titulo: "", descricao: "", status: "", nota: "" }); // Novo usuário
+  const [showModalAlteraQuadro, setShowModalAlteraQuadro] = useState(false);
+  const [NewTarefa, setNewTarefa] = useState({ id: "", titulo: "", descricao: "", status: "", nota: "" }); // Nova Tarefa
   const [inProgressTasks, setInProgressTasks] = useState([]);
   const [toDoTasks, setToDoTasks] = useState([]);
   const [doneTasks, setDoneTasks] = useState([]);
   const [selectedDroppableId, setSelectedDroppableId] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState({ id: "", name: "" });
+  const [TarefaQuadro, setTarefaQuadro] = useState({id_tarefa: "", id_quadro_destino: "" });
   const [boards, setBoards] = useState([]);
+  const userid = localStorage.getItem("UserID");
 
   const fetchQuadros = async () => {
     try {
@@ -21,7 +24,7 @@ const Tarefas = () => {
       const res = await GetQuadrosByUserId(userid);
       if (res && Array.isArray(res.data) && res.data.length > 0) {
         setBoards(res.data);
-        setSelectedBoard(res.data[0]);
+        setSelectedBoard(res.data[-1]);
       } else {
         setBoards([]);
         setSelectedBoard(null);
@@ -32,7 +35,6 @@ const Tarefas = () => {
       console.error(error);
     }
   };
-
   const handleEditTarefa = async (id) => {
     try {
       const data = await GetTarefaById(id);
@@ -43,10 +45,14 @@ const Tarefas = () => {
       alert(error);
     }
   }
-
   const handleUpdateTarefa = async () => {
     try {
-      const data = await UpdateTarefa(NewTarefa.id, NewTarefa.titulo, NewTarefa.descricao, NewTarefa.status, NewTarefa.nota);
+      if (!NewTarefa.titulo || !NewTarefa.descricao) {
+        alert("Preencha título e descrição.");
+        return;
+      }
+      const data = await UpdateTarefa(NewTarefa.id, NewTarefa.titulo, NewTarefa.descricao, userid, NewTarefa.status, NewTarefa.nota);
+      console.log(data);
       if (data.status === 200) {
         setShowModal(false);
         fechTarefasByQuadroId(selectedBoard.id);
@@ -56,7 +62,6 @@ const Tarefas = () => {
       alert(error);
     }
   }
-
   const fechTarefasByQuadroId = async (quadroId) => {
     if(!quadroId) return;
     try {
@@ -82,37 +87,24 @@ const Tarefas = () => {
       fechTarefasByQuadroId(selectedBoard.id);
     }
   }, [selectedBoard]);
-
   useEffect(() => {
-    const fetchQuadros = async () => {
-      try {
-        const userid = localStorage.getItem("UserID");
-        const res = await GetQuadrosByUserId(userid);
-        if (res && Array.isArray(res.data) && res.data.length > 0) {
-          setBoards(res.data);
-          setSelectedBoard(res.data[-1]); // 🚀 Definir primeiro quadro automaticamente
-        } else {
-          setBoards([]);
-          setSelectedBoard(null);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-  
     fetchQuadros();
   }, []);
-  
   const handleCreateTarefa = async () => {
     try {
-      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , NewTarefa.userId, selectedDroppableId, NewTarefa.nota);
+      const userId = localStorage.getItem("UserID");
+      if (!NewTarefa.titulo || !NewTarefa.descricao) {
+        alert("Preencha título e descrição.");
+        return;
+      }
+      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , userId, selectedDroppableId, NewTarefa.nota, selectedBoard.id);
       if (data.status === 200) {
         alert("Tarefa cadastrado com sucesso");
-        setNewTarefa({ titulo: "", descricao: "", userId: "", status: "", nota: "" });
+        setNewTarefa({ id:"", titulo: "", descricao: "", userId: "", status: "", nota: "" });
         setShowModal(false);
         fechTarefasByQuadroId(selectedBoard.id); 
       } else if (data.status === 409) {
-        setNewTarefa({ titulo: "", descricao: "", userId: "", status: "", nota:"" });
+        setNewTarefa({ id:"", titulo: "", descricao: "", userId: "", status: "", nota:"" });
         alert("Tarefa já cadastrado");
         return;
       }
@@ -121,7 +113,6 @@ const Tarefas = () => {
       console.log(error);
     }
   };
-
   const handleUpdateStatusTarefa = async (id, status) => {
     try {
       const data = await UpdateStatusTarefa(id, status);
@@ -132,18 +123,46 @@ const Tarefas = () => {
       console.log(error);
     }
   }
+  const handleDeleteTarefa = async (id) => {
+    try {
+      const data = await DeleteTarefa(id);
+      if (data.status === 200) {
+        alert(data.data.message);
+        fechTarefasByQuadroId(selectedBoard.id); 
+      } else if (data.status === 409) {
+        alert("Erro ao deletar tarefa");
+        return;
+      }
+    } catch (error) {
+      alert(error);
+      console.log(error);
+    }
+  }
+  const handleAlteraQuadroTarefa = async (id) => {
+    try{
+      const data = await AlteraTarefaQuadro(id, TarefaQuadro.id_quadro_destino);
+      console.log(data);
+      if (data.status === 200) {
+        alert(data.data.message);
+        setShowModalAlteraQuadro(false);
+        fechTarefasByQuadroId(selectedBoard.id); 
+      } else if (data.status === 409) {
+        alert("Erro ao alterar quadro da tarefa");
+        return;
+      }
+    } catch (error) {
+      alert(error);
+      console.log(error);
+    }
+  }
   const onDragEnd = (result) => {
-    if (!result.destination) return; // Se não houver destino, não faz nada
-
+    if (!result.destination) return; // Se não houver destino, não faz nada  
     const sourceList = getList(result.source.droppableId);
-    const destinationList = getList(result.destination.droppableId);
-
+    const destinationList = getList(result.destination.droppableId)
     const [movedTask] = sourceList.splice(result.source.index, 1);
     destinationList.splice(result.destination.index, 0, movedTask);
-
     setLists(result.source.droppableId, sourceList);
     setLists(result.destination.droppableId, destinationList);
-
     // Pegando o ID da task que está sendo movida
     const movedTaskId = movedTask.id;
     const destinationStatus = result.destination.droppableId;
@@ -157,7 +176,7 @@ const Tarefas = () => {
         <h2 className={`text-center ${textColor}`}>
           {title}
         </h2>
-        <Droppable droppableId={droppableId}>
+        <Droppable droppableId={droppableId}> 
           {(provided) => (
             <div className="list-group" {...provided.droppableProps} ref={provided.innerRef}>
               {tasks.map((task, index) => (
@@ -168,22 +187,61 @@ const Tarefas = () => {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      onClick={() => {
-                        setNewTarefa(task);
-                        setShowModal(true);
-                        handleEditTarefa(task.id);
-                        }}
-                      >
-                        {task.titulo}
-                        {task.nota && (
-                        <div className="text-muted ">
+                    >
+                      {task.titulo}
+                      {task.nota && (
+                        <div className="text-muted">
                           <span className="fw-bold">Nota:</span> {task.nota}
                         </div>
-                        )}
-                        <span className="float-end" style={{ cursor: "pointer" }} onClick={() => {
-                        setNewTarefa(task);
-                        setShowModal(true);
-                      }}>⋮</span>
+                      )}
+                      <div className="dropdown float-end">
+                        <span
+                          style={{ cursor: "pointer" }}
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                        >
+                          ⋮
+                        </span>
+                        <ul className="dropdown-menu dropdown-menu-end">
+                          <li>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                setNewTarefa(task);
+                                setShowModal(true);
+                                handleEditTarefa(task.id);
+                              }}
+                            >
+                              Editar
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                setShowModalAlteraQuadro(true);
+                                setTarefaQuadro({ id_tarefa: task.id });
+                                console.log(TarefaQuadro);
+                              }}
+                            >
+                              Alterar Quadro 
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              className="dropdown-item text-danger"
+                              onClick={() => {
+                                if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
+                                  handleDeleteTarefa(task.id);
+                                  fechTarefasByQuadroId(selectedBoard.id);
+                                }
+                              }}
+                            >
+                              Deletar
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   )}
                 </Draggable>
@@ -192,16 +250,18 @@ const Tarefas = () => {
             </div>
           )}
         </Droppable>
-        <button className="btn bg-light w-100 mt-2 fw-bold" 
+        <button
+          className="btn btn-outline-light w-100 mt-2 fw-bold"
           onClick={() => {
-                          setShowModal(true);
-                          setSelectedDroppableId(droppableId);}}
-        >Adicionar tarefa
+            setShowModal(true);
+            setSelectedDroppableId(droppableId);
+          }}
+        >
+          Adicionar tarefa
         </button>
       </div>
     </div>
   );
-
   const getList = (id) => {
     switch (id) {
       case "0":
@@ -214,7 +274,6 @@ const Tarefas = () => {
         return [];
     }
   };
-
   const setLists = (id, newList) => {
     switch (id) {
       case "0":
@@ -230,13 +289,12 @@ const Tarefas = () => {
         break;
     }
   };
-
   return (
     <div className="container mt-4">     
-      <h3 className="text-center">📝 Lista de Tarefas</h3>
+      <h1 className="text-center mb-4">📝 Lista de Tarefas</h1>
       <div className="text-left mb-3">
         <select
-          value={selectedBoard?.id || ""} // Evita erro inicial
+          value={selectedBoard?.id || "-1"} // Evita erro inicial
           onChange={(e) => {
             const selectedId = e.target.value; // Mantém como string se necessário
             const newBoard = boards.find((board) => board.id.toString() === selectedId); 
@@ -257,20 +315,32 @@ const Tarefas = () => {
       <DragDropContext onDragEnd={onDragEnd}>
         <main className="row">
           {/* Coluna Tarefas a Fazer */}
-          <TaskColumn title="Tarefas à fazer" tasks={toDoTasks} bgColor="bg-danger" droppableId="0" />
-
-          {/* Coluna Tarefas em andamento */}
-          <TaskColumn title="Tarefas em andamento" tasks={inProgressTasks} bgColor="bg-warning" droppableId="1" />
-
-          {/* Coluna Tarefas Concluídas */}
-          <TaskColumn title="Tarefas concluídas" tasks={doneTasks} bgColor="bg-success" droppableId="2" />
+          <TaskColumn 
+            title="Tarefas à fazer" 
+            tasks={toDoTasks} 
+            bgColor="bg-soft-dark border-custom" 
+            textColor="text-light" 
+            droppableId="0" 
+          />
+          <TaskColumn 
+            title="Tarefas em andamento" 
+            tasks={inProgressTasks} 
+            bgColor="bg-soft-gray border-custom" 
+            textColor="text-light" 
+            droppableId="1" 
+          />
+          <TaskColumn 
+            title="Tarefas concluídas" 
+            tasks={doneTasks} 
+            bgColor="bg-soft-blue border-custom" 
+            textColor="text-light" 
+            droppableId="2" 
+          />
         </main>
       </DragDropContext>
-
       {/* Modal de Cadastro de Tarefas */}
       <Modal
         show={showModal}
-        onShow={fetchQuadros}
         onHide={() => {
           setShowModal(false);
           setNewTarefa({ titulo: "", descricao: "", status:"", nota: "" });
@@ -318,8 +388,46 @@ const Tarefas = () => {
           >
             Fechar
           </Button>
+          <Button variant="danger" onClick={() => { setShowModal(false); handleDeleteTarefa(NewTarefa.id);}}>
+            Excluir
+          </Button> 
           <Button variant="primary" onClick={NewTarefa.id ? handleUpdateTarefa : handleCreateTarefa}>
-            Salvar
+            {NewTarefa.id ? "Atualizar" : "Criar"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* Modal de Alterar Quadro */}
+      <Modal
+        show={showModalAlteraQuadro}
+        onHide={() => {
+          setShowModalAlteraQuadro(false);
+        }}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Alterar Quadro</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>Selecione o quadro de Destino</Form.Label>
+            <Form.Select
+              value={TarefaQuadro.id_quadro_destino || "-1"}
+              onChange={(e) => setTarefaQuadro({ ...TarefaQuadro, id_quadro_destino: e.target.value })}
+            > 
+              <option value="-1">Selecione o quadro de destino</option>
+              {boards.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.nome}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModalAlteraQuadro(false)}>
+            Fechar
+          </Button>
+          <Button variant="primary" onClick={() => handleAlteraQuadroTarefa(TarefaQuadro.id_tarefa, TarefaQuadro.id_quadro_destino)}>
+            Alterar
           </Button>
         </Modal.Footer>
       </Modal>

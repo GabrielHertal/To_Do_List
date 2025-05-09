@@ -24,8 +24,6 @@ namespace To_Do_List.Server.Data
                 Senha = "123",
                 Ativo = 2
             });
-            modelBuilder.Entity<Inter_Quadro_Users>().HasKey(i => new { i.Fk_Id_Users, i.Fk_Id_Quadro});
-            modelBuilder.Entity<Inter_Tarefa_Quadro>().HasKey(i => new {i.Fk_Id_Tarefa, i.Fk_Id_Quadro});
         }
     }
 }

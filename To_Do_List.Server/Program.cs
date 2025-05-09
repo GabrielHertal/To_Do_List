@@ -1,74 +1,55 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using To_Do_List.Server;
+﻿using Microsoft.EntityFrameworkCore;
 using To_Do_List.Server.Data;
-using To_Do_List.Server.Services;
+using To_Do_List.Server.Extensoes;
 using To_Do_List.Server.Services.Quadros;
 using To_Do_List.Server.Services.Security;
+using To_Do_List.Server.Services;
+using To_Do_List.Server;
 
 var builder = WebApplication.CreateBuilder(args);
-// Add services to the container.
+
+// Configuração de serviços
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
+builder.Services.AddMvc();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));   
-});
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.ConfigureJWT(builder.Configuration);
+builder.Services.ConfigureCors();
+builder.Services.ConfigureIISIntegration();
+
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<ITarefasService, TarefasService>();
 builder.Services.AddScoped<ISecurityService, SecurityService>();
 builder.Services.AddScoped<IQuadroService, QuadroService>();
-var MyAllowSpecificOrigins = "_myallowspecificorigins";
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                    policy =>
-                    {
-                        policy.AllowAnyOrigin()
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    });
-});
-builder.Services.AddMvc();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt =>
-{
-    opt.TokenValidationParameters = new()
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-    };
-});
+
 var app = builder.Build();
-app.UseStaticFiles();
-app.UseDefaultFiles();
-app.UseCors(MyAllowSpecificOrigins);
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
-};
+}
 
+app.UseHsts();
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseDefaultFiles();
+
+app.UseRouting();
+app.UseCors(ServicesExtensions.MyAllowSpecificOrigins);
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
-app.MapControllers();
-
-app.MapFallbackToFile("/index.html");
-
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapFallbackToFile("/index.html");
+});
 app.Run();

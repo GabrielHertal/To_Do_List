@@ -1,10 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:5029/api",
+    baseURL: "https://localhost:7202/api",
   });
 
-  export const CreateTarefa = async (titulo, descricao, data_criacao, userId, status, nota) => {
+  export const CreateTarefa = async (titulo, descricao, data_criacao, userId, status, nota, fk_id_quadro) => {
     try{ 
         const response = await api.post(`/Tarefas/CreateTarefaAsync`, {
             titulo : titulo,
@@ -12,7 +12,8 @@ const api = axios.create({
             data_criacao : data_criacao,
             fkidusuario : userId,
             status : status,
-            nota : nota
+            nota : nota,
+            fk_id_quadro : fk_id_quadro
         });
         return response;
     } catch (error) {
@@ -65,6 +66,24 @@ export const UpdateStatusTarefa = async (id, status) => {
 export const GetTarefaByQuadroId = async (id) => {
     try{
         const response = await api.get(`/Tarefas/GetTarefasByQuadro/${id}`);
+        return response;
+    }
+    catch (error) {
+        return error.response.data;
+    }
+}
+export const DeleteTarefa = async (id) => {
+    try{
+        const response = await api.delete(`/Tarefas/DeleteTarefa/${id}`);
+        return response;
+    }
+    catch (error) {
+        return error.response.data;
+    }
+}
+export const AlteraTarefaQuadro = async (id, id_quadro_novo) => {
+    try{
+        const response = await api.put(`/Tarefas/AlteraTarefaQuadro/${id}/${id_quadro_novo}`);
         return response;
     }
     catch (error) {

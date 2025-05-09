@@ -101,6 +101,7 @@ const Usuários = () => {
 
     return (
         <div className="container mt-4">
+            <h1 className="text-center mb-4">Usuários</h1>
             <div className="d-flex justify-content-between mb-3">
                 <Button variant="primary" onClick={() => setShowModal(true)}>
                     + Criar Usuário

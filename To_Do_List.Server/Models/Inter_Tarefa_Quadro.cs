@@ -5,6 +5,9 @@ namespace To_Do_List.Server.Models
 {
     public class Inter_Tarefa_Quadro
     {
+        [Key]
+        [Required]
+        public int Id_Inter_Tarefa_Quadro { get; set; }
         [ForeignKey("Quadro")]
         [Required]
         public int Fk_Id_Quadro { get; set; }
