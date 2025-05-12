@@ -77,7 +77,7 @@ A aplicação estará acessível em: `http://localhost:59644`
 - Marcar tarefas como concluídas
 - Listagem de quadros por usuário autenticado
 - Listagem de tarefas Quadro
-- Interface responsiva com Bootstrap
+- Interface responsiva com React e Bootstrap
 
 ---
 
