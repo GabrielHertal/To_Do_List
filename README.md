@@ -39,7 +39,7 @@ To_Do_List/
 - Adicionar, editar e excluir tarefas
 - Marcar tarefas como concluídas
 - Listagem de quadros por usuário autenticado
-- Listagem de tarefas Quadro
+- Listagem de tarefas por Quadro
 - Interface responsiva com React e Bootstrap
 
 ---
