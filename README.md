@@ -33,43 +33,6 @@ To_Do_List/
 
 ---
 
-## ⚙️ Como Executar o Projeto
-
-### Pré-requisitos
-- [.NET SDK](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/)
-- Banco de dados (PostGreSQL)
-
-### 1. Clonar o repositório
-
-```bash
-git clone https://github.com/GabrielHertal/To_Do_List.git
-cd To_Do_List
-```
-
-### 2. Configurar e iniciar o backend (API)
-
-```bash
-cd To_Do_List.Server
-dotnet restore
-dotnet ef database update
-dotnet run
-```
-
-A API estará disponível em: `https://localhost:7202` ou `http://localhost:5029`
-
-### 3. Iniciar o frontend (React)
-
-```bash
-cd to_do_list.client
-npm install
-npm start
-```
-
-A aplicação estará acessível em: `http://localhost:59644`
-
----
-
 ## ✅ Funcionalidades
 
 - Cadastro e login de usuários
@@ -78,20 +41,6 @@ A aplicação estará acessível em: `http://localhost:59644`
 - Listagem de quadros por usuário autenticado
 - Listagem de tarefas Quadro
 - Interface responsiva com React e Bootstrap
-
----
-
-## 🗃️ Migrations (EF Core)
-
-Para criar uma nova migration:
-```bash
-dotnet ef migrations add NomeDaMigration
-```
-
-Para atualizar o banco de dados:
-```bash
-dotnet ef database update
-```
 
 ---
 
