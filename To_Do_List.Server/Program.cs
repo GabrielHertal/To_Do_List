@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using To_Do_List.Server;
 using To_Do_List.Server.Data;
 using To_Do_List.Server.Extensoes;
+using To_Do_List.Server.Services;
 using To_Do_List.Server.Services.Quadros;
 using To_Do_List.Server.Services.Security;
-using To_Do_List.Server.Services;
-using To_Do_List.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.ConfigureJWT(builder.Configuration);
 builder.Services.ConfigureCors();
 builder.Services.ConfigureIISIntegration();
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<ITarefasService, TarefasService>();
@@ -50,6 +51,6 @@ app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
-    endpoints.MapFallbackToFile("/index.html");
+    endpoints.MapFallbackToFile("index.html");
 });
 app.Run();

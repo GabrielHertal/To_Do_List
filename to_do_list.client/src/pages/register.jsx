@@ -17,7 +17,6 @@ function RegisterAplication() {
         event.preventDefault();
         setLoading(true);
         setError(null);
-
         try 
         {
             const data = await Register(email, name, password); 

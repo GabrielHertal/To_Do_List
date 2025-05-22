@@ -1,9 +1,14 @@
 import axios from "axios";
-
 const api = axios.create({
-    baseURL: "https://localhost:7202/api",
-  });
-
+  baseURL: "https://localhost:7202/api",
+});
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('AuthToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 export const GetQuadros = async () => {
     try{
         const response = await api.get("/Quadro/GetAllQuadros");
@@ -50,6 +55,14 @@ export const DeleteQuadro = async (id) => {
 export const GetQuadrosByUserId = async (id_user) => {
     try{
         const response = await api.get(`/Quadro/GetQuadroByIdUser/${id_user}`);	
+        return response;
+    } catch (error) {
+        return error.response.data;
+    }
+}
+export const GetQuadrosTarefaByIdUser = async (id_user) => {
+    try{
+        const response = await api.get(`/Quadro/GetQuadrosTarefaByIdUser/${id_user}`);	
         return response;
     } catch (error) {
         return error.response.data;

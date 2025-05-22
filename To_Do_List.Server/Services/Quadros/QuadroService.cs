@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using To_Do_List.Server.Data;
 using To_Do_List.Server.DTO;
@@ -42,6 +41,22 @@ namespace To_Do_List.Server.Services.Quadros
             }
         }
         public async Task<List<Quadro>> GetQuadroByIdUserAsync(int id_user)
+        {
+            try
+            {
+                var quadros = await _context.Inter_Quadro_Users
+                                             .Include(q => q.Quadro)
+                                             .Where(q => q.Fk_Id_Users == id_user && q.Quadro != null && q.Quadro.Fk_Id_User_Dono != id_user)
+                                             .Select(q => q.Quadro!)
+                                             .ToListAsync() ?? throw new Exception("Quadro não encontrado!");
+                return quadros;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public async Task<List<Quadro>> GetQuadrosTarefasByUserAsync(int id_user)
         {
             try
             {
@@ -134,7 +149,7 @@ namespace To_Do_List.Server.Services.Quadros
         {
             try
             {
-                if(await QuadroTarefa(id))
+                if (await QuadroTarefa(id))
                 {
                     return 409;
                 }

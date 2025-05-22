@@ -11,7 +11,8 @@ namespace To_Do_List.Server.Services.Quadros
         Task <List<Quadro>> GetAllQuadrosAsync();
         Task <Quadro> GetQuadroByIdAsync(int id);
         Task<int> VinculaQuadroUserAsync(string convite, int id_user);
-        Task <List<Quadro>> GetQuadroByIdUserAsync(int id_user);   
+        Task <List<Quadro>> GetQuadroByIdUserAsync(int id_user);
+        Task <List<Quadro>> GetQuadrosTarefasByUserAsync(int id_user);
         Task <List<Quadro>> GetQuadroByOwnerId(int id_user_owner);
         Task<string> CreateCodigoConvite(int tamanho);
         Task<int> VinculaCodigoConviteQuadro(int id_quadro, string codigo);

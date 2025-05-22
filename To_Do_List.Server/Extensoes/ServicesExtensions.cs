@@ -33,6 +33,9 @@ namespace To_Do_List.Server.Extensoes
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(opt =>
             {
+                opt.RefreshInterval = TimeSpan.FromDays(30);    
+                opt.RequireHttpsMetadata = false;
+                opt.SaveToken = true;
                 opt.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,

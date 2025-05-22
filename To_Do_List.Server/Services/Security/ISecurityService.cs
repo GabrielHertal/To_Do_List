@@ -4,8 +4,8 @@ namespace To_Do_List.Server.Services.Security
 {
     public interface ISecurityService
     {
-        Task<bool> ValidaUser(SecurityDTO loginDTO);
-        Task<SecurityDTO> RegisterAsync(SecurityDTO registerDTO);
-        Task<SecurityDTO?> GetUserInformation(string? email);
+        Task<bool> ValidaUser(LoginDTO loginDTO);
+        Task<SecurityDTO> GetUserInformationById(int? id);
+        Task<SecurityDTO> GetUserInformationByEmail(string email);
     }
 }

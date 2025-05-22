@@ -19,22 +19,30 @@ function Login() {
         setError(null);
 
         try {
-            const data = await login(email, password); // Chama a API corretamente
+            const data = await login(email, password); 
             if(data.status === 401) {
                 alert("Usuário ou senha inválidos");
                 return;
             }
+            console.log(data);  
+            if(data.token === undefined || data.name === undefined) {
+                alert("Erro ao realizar login");
+                return; 
+            }
             localStorage.setItem("AuthToken", data.token);
-            navigate("/"); // Redireciona após o login
+            localStorage.setItem("UserName", data.name);
+            localStorage.setItem("UserID", data.id);
+            window.dispatchEvent(new Event("setUserNameLogged"));
         } catch (error) {
             setError(error.message);
         } finally {
             setLoading(false);
+            navigate("/");
         }
     };
 
     return (
-        <section className="vh-100" style={{ backgroundColor: "#FFFFFF" }}>
+        <section className="vh-100 bg-dark" >
             <div className="container-fluid h-custom">
                 <div className="row d-flex justify-content-center align-items-center h-100">
                     <div className="col-md-9 col-lg-6 col-xl-5">
@@ -84,7 +92,7 @@ function Login() {
                                     {loading ? "Entrando..." : "Entrar"}
                                 </button>
                                 <p className="small fw-bold mt-2 pt-1 mb-0">
-                                    Não possui uma conta? <a href="/register" className="link-danger">Registre-se</a>
+                                    Não possui uma conta? <a href="/register" className="link-info">Registre-se</a>
                                 </p>
                             </div>
                         </form>

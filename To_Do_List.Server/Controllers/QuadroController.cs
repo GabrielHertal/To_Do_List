@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using To_Do_List.Server.DTO;
 using To_Do_List.Server.Models;
 using To_Do_List.Server.Services.Quadros;
@@ -7,6 +8,7 @@ namespace To_Do_List.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class QuadroController : ControllerBase
     {
         private readonly IQuadroService _quadro;
@@ -84,6 +86,19 @@ namespace To_Do_List.Server.Controllers
             try
             {
                 var quadro = await _quadro.GetQuadroByIdUserAsync(id_user);
+                return Ok(quadro);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+        [HttpGet("GetQuadrosTarefaByIdUser/{id_user}")]
+        public async Task<ActionResult<Quadro>> GetQuadrosTarefasByUserAsync(int id_user)
+        {
+            try
+            {
+                var quadro = await _quadro.GetQuadrosTarefasByUserAsync(id_user);
                 return Ok(quadro);
             }
             catch (Exception ex)

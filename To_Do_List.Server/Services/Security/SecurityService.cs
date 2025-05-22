@@ -12,25 +12,34 @@ namespace To_Do_List.Server.Services.Security
             _context = context;
         }
 
-        public async Task<bool> ValidaUser(SecurityDTO loginDTO)
+        public async Task<bool> ValidaUser(LoginDTO loginDTO)
         {
-            return await _context.Users.AnyAsync(u => u.Email == loginDTO.Email && u.Senha == loginDTO.Password);
-        }
-
-        public Task<SecurityDTO> RegisterAsync(SecurityDTO registerDTO)
-        {
-            throw new NotImplementedException();
-        }
-        public async Task<SecurityDTO?> GetUserInformation(string? email)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null)
+            try
             {
-                return null;
+                return await _context.Users.AnyAsync(u => u.Email == loginDTO.Email && u.Senha == loginDTO.Password);
             }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        public async Task<SecurityDTO> GetUserInformationById(int? id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
             return new SecurityDTO
             {
-                Id = user.Id,
+                Id = user!.Id,
+                Name = user.Nome,
+                Email = user.Email,
+                Password = user.Senha
+            };
+        }
+        public async Task<SecurityDTO> GetUserInformationByEmail(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return new SecurityDTO
+            {
+                Id = user!.Id,
                 Name = user.Nome,
                 Email = user.Email,
                 Password = user.Senha

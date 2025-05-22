@@ -16,7 +16,7 @@ const Quadros = () => {
     const [currentPageParticipa, setCurrentPageParticipa] = useState(1);
     const ITEMS_PER_PAGE_CRIADOS = 3;
     const totalPagesCriados = Math.ceil(myquadros.length / ITEMS_PER_PAGE_CRIADOS);
-    const ITEMS_PER_PAGE_PARTICIPA = 5;
+    const ITEMS_PER_PAGE_PARTICIPA = 4;
     const totalPagesParticipa = Math.ceil(participaquadros.length / ITEMS_PER_PAGE_PARTICIPA); 
     const startPageparticipa = Math.max(1, currentPageParticipa - Math.floor(ITEMS_PER_PAGE_PARTICIPA / 2));
     const endPageparticipa = Math.min(currentPageParticipa, startPageparticipa + ITEMS_PER_PAGE_PARTICIPA - 1);
@@ -265,7 +265,7 @@ const Quadros = () => {
                 </Button>
             </div>
             {/* Tabela de Usuários */}
-            <Table striped bordered hover>
+            <Table borderless responsive="bg">
                 <thead className="text-center">
                     <tr>
                         <th>ID</th>
@@ -279,25 +279,27 @@ const Quadros = () => {
                             <tr key={quadro.id}>
                                 <td>{quadro.id}</td>
                                 <td>{quadro.nome}</td>
-                                <td>
-                                    <Button variant="info" onClick={() => handleVisualizaMembrosQuadro(quadro.id)}>
-                                        Visualizar Membros
-                                    </Button>
-                                    {quadro.codigo_Convite ? (
-                                        <Button variant="info" onClick={() => handleVisualizaCodigoConvite(quadro.id)}>
-                                            Visualizar Código de Convite
+                                <td className="align-middle">
+                                    <div className="gap-3 d-flex justify-content-center">
+                                        <Button variant="info" onClick={() => handleVisualizaMembrosQuadro(quadro.id)}>
+                                            Visualizar Membros
                                         </Button>
-                                    ) : (
-                                        <Button variant="success" onClick={() => handleGeraCodigoConvite(quadro.id)}>
-                                            Gerar Código de Convite 
+                                        {quadro.codigo_Convite ? (
+                                            <Button variant="info" onClick={() => handleVisualizaCodigoConvite(quadro.id)}>
+                                                Visualizar Código de Convite
+                                            </Button>
+                                        ) : (
+                                            <Button variant="success" onClick={() => handleGeraCodigoConvite(quadro.id)}>
+                                                Gerar Código de Convite 
+                                            </Button>
+                                        )}
+                                        <Button variant="warning" onClick={() => handleEditQuadro(quadro.id)}>
+                                            Editar
                                         </Button>
-                                    )}
-                                    <Button variant="warning" onClick={() => handleEditQuadro(quadro.id)}>
-                                        Editar
-                                    </Button>
-                                    <Button variant="danger " onClick={() => handleDeleteQuadro(quadro.id)}>
-                                        Deletar
-                                    </Button>
+                                        <Button variant="danger " onClick={() => handleDeleteQuadro(quadro.id)}>
+                                            Deletar
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                         ))
@@ -310,16 +312,16 @@ const Quadros = () => {
                     )}
                 </tbody>
             </Table>
+            {/* Paginação */}
+            <div className="d-flex justify-content-center mb-3">
             {myquadros.length > 0 && (
-                <Pagination>
+            <Pagination className="justify-content-center">
                 <Pagination.Prev
                   disabled={currentPageCriados === 1}
                   onClick={() => setCurrentPageCriados(currentPageCriados - 1)}
                 />
-              
                 {startPagecriado > 1 && <Pagination.Item onClick={() => setCurrentPageCriados(1)}>1</Pagination.Item>}
-                {startPagecriado > 2 && <Pagination.Ellipsis disabled />}
-              
+                {startPagecriado > 2 && <Pagination.Ellipsis disabled />}             
                 {Array.from({ length: endPagecriado - startPagecriado + 1 }, (_, idx) => {
                   const page = startPagecriado + idx;
                   return (
@@ -331,22 +333,21 @@ const Quadros = () => {
                       {page}
                     </Pagination.Item>
                   );
-                })}
-              
+                })}            
                 {endPagecriado < totalPagesCriados - 1 && <Pagination.Ellipsis disabled />}
                 {endPagecriado < totalPagesCriados && (
                   <Pagination.Item onClick={() => setCurrentPageCriados(totalPagesCriados)}>
                     {totalPagesCriados}
                   </Pagination.Item>
-                )}
-              
+                )}           
               <Pagination.Next
                 disabled={currentPageCriados == totalPagesCriados}
                 onClick={() => setCurrentPageCriados(currentPageCriados + 1)}
                 />
-              </Pagination>
+            </Pagination>
             )}
-             {/* Quadros em que o usuário esta vinculado  */}
+            </div>
+            {/* Quadros em que o usuário esta vinculado  */}
             <h3 className="text-center">Quadros Participante</h3>
             <div className="d-flex justify-content-end mb-3">
                 <Button variant="primary" onClick={() => setShowModalIngressaQuadro(true)}>
@@ -354,7 +355,7 @@ const Quadros = () => {
                 </Button>
             </div>
             {/* Tabela de Usuários */}
-            <Table striped bordered hover>
+            <Table borderless responsive="bg">
                 <thead className="text-center">
                     <tr>
                         <th>ID</th>
@@ -368,22 +369,24 @@ const Quadros = () => {
                             <tr key={participaquadro.id}>
                                 <td>{participaquadro.id}</td>
                                 <td>{participaquadro.nome}</td>
-                                <td>
-                                    <Button variant="info" onClick={() => handleVisualizaMembrosQuadro(participaquadro.id)}>
+                                <td className="align-middle">
+                                    <div className="gap-3 d-flex justify-content-center">
+                                        <Button variant="info" onClick={() => handleVisualizaMembrosQuadro(participaquadro.id)}>
                                         Visualizar Membros
-                                    </Button>
-                                    {participaquadro.codigo_Convite ? (
+                                        </Button>
+                                        {participaquadro.codigo_Convite ? (
                                         <Button variant="info" onClick={() => handleVisualizaCodigoConvite(participaquadro.id)}>
                                             Visualizar Código de Convite
                                         </Button>
-                                    ) : (
+                                        ) : (
                                         <Button variant="success" onClick={() => handleGeraCodigoConvite(participaquadro.id)}>
                                             Gerar Código de Convite
                                         </Button>
-                                    )}
-                                    <Button variant="danger" onClick={() => handleDesvinculaUserQuadro(participaquadro.id)}>
+                                        )}
+                                        <Button variant="danger" onClick={() => handleDesvinculaUserQuadro(participaquadro.id)}>
                                         Sair do Quadro
-                                    </Button>
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                         ))
@@ -397,8 +400,9 @@ const Quadros = () => {
                 </tbody>
             </Table>
             {/* Paginação */}
+            <div className="d-flex justify-content-center mb-3">
             {participaquadros.length > 0 && (
-                <Pagination>
+            <Pagination>
                 <Pagination.Prev
                   disabled={currentPageParticipa === 1}
                   onClick={() => setCurrentPageParticipa(currentPageParticipa - 1)}
@@ -428,11 +432,12 @@ const Quadros = () => {
                 )}
               
               <Pagination.Next
-                disabled={currentPageParticipa == currentPageParticipa}
+                disabled={currentPageParticipa === totalPagesParticipa}
                 onClick={() => setCurrentPageParticipa(currentPageParticipa + 1)}
                 />
-              </Pagination>
+            </Pagination>
             )}
+            </div>
             {/* Modal de Cadastro */}
             <Modal
                 show={showModal}

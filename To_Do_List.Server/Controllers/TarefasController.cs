@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using To_Do_List.Server.DTO;
 using To_Do_List.Server.Models;
 using To_Do_List.Server.Services;
@@ -7,6 +8,7 @@ namespace To_Do_List.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TarefasController : ControllerBase
     {
         private readonly ITarefasService _tarefa;

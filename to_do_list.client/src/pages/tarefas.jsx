@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Form, Button } from "react-bootstrap";
 import { CreateTarefa, GetTarefaByQuadroId, GetTarefaById, UpdateTarefa, UpdateStatusTarefa, DeleteTarefa, AlteraTarefaQuadro } from "../services/tarefas/api";
-import { GetQuadrosByUserId } from "../services/quadros/api";
+import { GetQuadrosTarefaByIdUser } from "../services/quadros/api";
 
 const Tarefas = () => {
   const [showModal, setShowModal] = useState(false); // Controle do modal
@@ -18,10 +18,9 @@ const Tarefas = () => {
   const [boards, setBoards] = useState([]);
   const userid = localStorage.getItem("UserID");
 
-  const fetchQuadros = async () => {
+  const fetchQuadros = React.useCallback(async () => {
     try {
-      const userid = localStorage.getItem("UserID");
-      const res = await GetQuadrosByUserId(userid);
+      const res = await GetQuadrosTarefaByIdUser(userid);
       if (res && Array.isArray(res.data) && res.data.length > 0) {
         setBoards(res.data);
         setSelectedBoard(res.data[-1]);
@@ -34,7 +33,7 @@ const Tarefas = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [userid]);
   const handleEditTarefa = async (id) => {
     try {
       const data = await GetTarefaById(id);
@@ -68,7 +67,6 @@ const Tarefas = () => {
       const response = await GetTarefaByQuadroId(quadroId);
       const tarefas = response.data;
       if (Array.isArray(tarefas)) {
-        // Categorize tasks
         const toDo = tarefas.filter(task => task.status === '0');
         const inProgress = tarefas.filter(task => task.status === '1');
         const done = tarefas.filter(task => task.status === '2');
@@ -88,16 +86,15 @@ const Tarefas = () => {
     }
   }, [selectedBoard]);
   useEffect(() => {
-    fetchQuadros();
-  }, []);
+   fetchQuadros();
+  }, [fetchQuadros]);
   const handleCreateTarefa = async () => {
     try {
-      const userId = localStorage.getItem("UserID");
       if (!NewTarefa.titulo || !NewTarefa.descricao) {
         alert("Preencha título e descrição.");
         return;
       }
-      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , userId, selectedDroppableId, NewTarefa.nota, selectedBoard.id);
+      const data = await CreateTarefa(NewTarefa.titulo, NewTarefa.descricao, null , userid, selectedDroppableId, NewTarefa.nota, selectedBoard.id);
       if (data.status === 200) {
         alert("Tarefa cadastrado com sucesso");
         setNewTarefa({ id:"", titulo: "", descricao: "", userId: "", status: "", nota: "" });
@@ -172,7 +169,7 @@ const Tarefas = () => {
   };
   const TaskColumn = ({ title, tasks, droppableId, bgColor = "bg-light", textColor = "text-dark" }) => (
     <div className="col-md-4">
-      <div className={`p-2 border rounded ${bgColor}`}>
+      <div className={`p-2 borderless rounded ${bgColor}`}>
         <h2 className={`text-center ${textColor}`}>
           {title}
         </h2>
@@ -245,13 +242,13 @@ const Tarefas = () => {
                     </div>
                   )}
                 </Draggable>
-              ))}
+              ))} 
               {provided.placeholder}
             </div>
           )}
         </Droppable>
         <button
-          className="btn btn-outline-light w-100 mt-2 fw-bold"
+          className="btn btn-secondary w-100 mt-3"
           onClick={() => {
             setShowModal(true);
             setSelectedDroppableId(droppableId);
@@ -343,58 +340,60 @@ const Tarefas = () => {
         show={showModal}
         onHide={() => {
           setShowModal(false);
-          setNewTarefa({ titulo: "", descricao: "", status:"", nota: "" });
-        }}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>{NewTarefa.id ? "Editar Tarefa" : "Criar Nova Tarefa"}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
+            setNewTarefa({ titulo: "", descricao: "", status:"", nota: "" });
+          }}
+          >
+          <Modal.Header closeButton>
+            <Modal.Title>{NewTarefa.id ? "Editar Tarefa" : "Criar Nova Tarefa"}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
             <Form.Group className="mb-3">
               <Form.Label>Título</Form.Label>
               <Form.Control
-                type="text"
-                value={NewTarefa.titulo}
-                onChange={(e) => setNewTarefa({ ...NewTarefa, titulo: e.target.value })}
+              type="text"
+              value={NewTarefa.titulo}
+              onChange={(e) => setNewTarefa({ ...NewTarefa, titulo: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Descrição</Form.Label>
               <Form.Control
-                as="textarea"
-                rows={3}
-                value={NewTarefa.descricao}
-                onChange={(e) => setNewTarefa({ ...NewTarefa, descricao: e.target.value })}
+              as="textarea"
+              rows={3}
+              value={NewTarefa.descricao}
+              onChange={(e) => setNewTarefa({ ...NewTarefa, descricao: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Nota</Form.Label>
               <Form.Control
-                type="text"
-                value={NewTarefa.nota}
-                onChange={(e) => setNewTarefa({ ...NewTarefa, nota: e.target.value })}
+              type="text"
+              value={NewTarefa.nota}
+              onChange={(e) => setNewTarefa({ ...NewTarefa, nota: e.target.value })}
               />
             </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
+            </Form>
+          </Modal.Body>
+          <Modal.Footer className="d-flex justify-content-between">
+            <Button
             variant="secondary"
             onClick={() => {
               setShowModal(false);
-              setNewTarefa({ titulo: "", descricao: "", status: "", nota: "" });
-            }}
-          >
-            Fechar
-          </Button>
-          <Button variant="danger" onClick={() => { setShowModal(false); handleDeleteTarefa(NewTarefa.id);}}>
-            Excluir
-          </Button> 
-          <Button variant="primary" onClick={NewTarefa.id ? handleUpdateTarefa : handleCreateTarefa}>
-            {NewTarefa.id ? "Atualizar" : "Criar"}
-          </Button>
-        </Modal.Footer>
+                setNewTarefa({ titulo: "", descricao: "", status: "", nota: "" });
+              }}
+              >
+              Fechar
+              </Button>
+              <div className="d-flex gap-2">
+                <Button variant="danger" onClick={() => { setShowModal(false); handleDeleteTarefa(NewTarefa.id);}}>
+                Excluir
+                </Button> 
+                <Button variant="primary" onClick={NewTarefa.id ? handleUpdateTarefa : handleCreateTarefa}>
+                {NewTarefa.id ? "Atualizar" : "Criar"}
+                </Button>
+              </div>
+              </Modal.Footer>
       </Modal>
       {/* Modal de Alterar Quadro */}
       <Modal
@@ -422,7 +421,7 @@ const Tarefas = () => {
             </Form.Select>
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button variant="secondary" onClick={() => setShowModalAlteraQuadro(false)}>
             Fechar
           </Button>

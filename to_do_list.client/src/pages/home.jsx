@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css"; 
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -10,13 +10,14 @@ import Quadros from "./quadros";
 
 function Home() {
     const navigate = useNavigate();
-    const [ UserName, setUserName ] = useState("User");
+    const [content, setContent] = useState();
+    const [UserName, setUserName ] = useState(localStorage.getItem("UserName") || "User");
     const handleLogout = async () => {
         confirm("Deseja realmente sair?");
         if(confirm){
             localStorage.removeItem("AuthToken");
-            localStorage.removeItem("UserID");
             localStorage.removeItem("UserName");
+            localStorage.removeItem("UserId");
             navigate("/login");
         }
     }
@@ -30,28 +31,28 @@ function Home() {
             const response = await GetUserInformation(token);
             if(response.statusCode === 401){
                 localStorage.removeItem("AuthToken");
-                localStorage.removeItem("UserID");
                 localStorage.removeItem("UserName");
+                localStorage.removeItem("UserId");
                 navigate("/login");
             }
-            else {
-                setUserName(response.name);
-                localStorage.setItem("UserID", response.id);
+            else 
+            {
+                const storedUserName = localStorage.getItem("UserName");
+                if (storedUserName) {
+                    setUserName(storedUserName);
+                }
             }
-        }
+        };
         fetchUserInfo();
         const handleUserNameUpdate = () => {
             setUserName(localStorage.getItem("UserName") || "User");
         };
-
-        window.addEventListener("userNameUpdated", handleUserNameUpdate);
-
-        return () => {
-            window.removeEventListener("userNameUpdated", handleUserNameUpdate);
+        const handleSetUserNameLogged = () => {
+            fetchUserInfo();
         };
+        window.addEventListener("userNameUpdated", handleUserNameUpdate);
+        window.addEventListener("setUserNameLogged", handleSetUserNameLogged);
     }, [navigate]);
-
-    const [content, setContent] = useState();
 
     const handleNavigation = (path) => {
         if (path === "/users") {

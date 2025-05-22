@@ -14,6 +14,7 @@ namespace To_Do_List.Server.Controllers
     {
         private IConfiguration _config;
         private readonly ISecurityService _security;
+
         public SecurityController(ISecurityService security, IConfiguration config)
         {
             _security = security;
@@ -21,73 +22,41 @@ namespace To_Do_List.Server.Controllers
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] SecurityDTO loginDTO)
+        public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
         {
             bool result = await _security.ValidaUser(loginDTO);
             if (result)
             {
                 var token = await GerateTokenJWT(loginDTO);
-                return Ok(new { token});
+                var userInformation = await _security.GetUserInformationByEmail(loginDTO.Email) ?? throw new InvalidOperationException("Variavel USERINFORMATION == null");
+                return Ok(new { token, userInformation.Id, userInformation.Name });
             }
             else
             {
                 return Unauthorized();
             }
         }
-        [HttpGet("Validate-Token")]
-        public IActionResult ValidateToken()
-        {
-            var authHeader = Request.Headers["AuthToken"].FirstOrDefault();
-            if (string.IsNullOrEmpty(authHeader))
-            {
-                return Unauthorized(new { Message = "Token não encontrado" });
-            }
-            var token = authHeader.Split(" ")[0];
-            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key"));
-            var tokenHandler = new JwtSecurityTokenHandler();
-            try
-            {
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuerSigningKey = true,
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidIssuer = _config["Jwt:Issuer"],
-                    ValidAudience = _config["Jwt:Audience"],
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                }, out SecurityToken validatedToken);
-
-                var jwtToken = validatedToken as JwtSecurityToken;
-                var expiration = jwtToken?.ValidTo;
-                return Ok(new { Message = "Token Válido", Expiration = expiration });
-            }
-            catch
-            {
-                return Unauthorized(new { Message = "Token inválido", StatusCode = 401 });
-            }
-        }
         [HttpGet("GetUserInformation")]
-        public async Task<SecurityDTO?> GetUserInformation()
+        public async Task<SecurityDTO?> GetUserInformationClaims()
         {
-            var authToken = Request.Headers["AuthToken"].FirstOrDefault();
-            if (string.IsNullOrEmpty(authToken))
+            var authToken = Request.Headers["Authorization"].FirstOrDefault();
+            if (string.IsNullOrEmpty(authToken) || !authToken.StartsWith("Bearer "))
             {
                 return null;
             }
-            var Claims = GetClaims(authToken);
-            if (Claims.TryGetValue(ClaimTypes.Email, out string? email))
+            var token = authToken.Substring("Bearer ".Length).Trim();
+            var claims = GetClaims(token);
+            if (claims.TryGetValue(ClaimTypes.NameIdentifier, out string? id))
             {
-                return await _security.GetUserInformation(email);
+                return await _security.GetUserInformationById(Convert.ToInt16(id));
             }
             return null;
         }
+
         private static Dictionary<string, string> GetClaims(string authToken)
         {
-            var token = authToken.Split("")[0];
             var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+            var jsonToken = handler.ReadToken(authToken) as JwtSecurityToken;
             var claims = jsonToken?.Claims.ToDictionary(claim => claim.Type, claim => claim.Value);
             if (claims != null)
             {
@@ -99,28 +68,33 @@ namespace To_Do_List.Server.Controllers
                 throw new InvalidOperationException("Variavel CLAIMS == null");
             }
         }
-        private async Task<string> GerateTokenJWT(SecurityDTO loginDTO)
+
+        private async Task<string> GerateTokenJWT(LoginDTO loginDTO)
         {
-            var userinformation = await _security.GetUserInformation(loginDTO.Email);
-            if (userinformation == null)
+            try
             {
-                Console.WriteLine("Variavel USERINFORMATION == null");
-                throw new InvalidOperationException("Variavel USERINFORMATION == null");
-            }
-            var claims = new[]
-            {
+                var userinformation = await _security.GetUserInformationByEmail(loginDTO.Email) ?? throw new InvalidOperationException("Variavel USERINFORMATION == null");
+                var claims = new[]
+                {
                 new Claim(ClaimTypes.Email, userinformation.Email),
-                new Claim(ClaimTypes.NameIdentifier, loginDTO.Id.ToString())
-            };
-            var issuer = _config["Jwt:Issuer"];
-            var audience = _config["Jwt:Audience"];
-            var expiry = DateTime.Now.AddMinutes(120);
-            var securitykey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var credentials = new SigningCredentials(securitykey, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(issuer, audience, claims, expires: expiry, signingCredentials: credentials);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var stringToken = tokenHandler.WriteToken(token);
-            return stringToken;
+                new Claim(ClaimTypes.NameIdentifier, Convert.ToString(userinformation.Id)!)
+                };
+
+                var issuer = _config["Jwt:Issuer"];
+                var audience = _config["Jwt:Audience"];
+                var expiry = DateTime.Now.AddMinutes(Convert.ToDouble(_config["Jwt:ExpiresInMinutes"]));
+                var securitykey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+                var credentials = new SigningCredentials(securitykey, SecurityAlgorithms.HmacSha256);
+                var token = new JwtSecurityToken(issuer, audience, claims, expires: expiry, signingCredentials: credentials);
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var stringToken = tokenHandler.WriteToken(token);
+                return stringToken;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro: " +  ex.Message);
+                return "vazio";
+            }
         }
     }
 }

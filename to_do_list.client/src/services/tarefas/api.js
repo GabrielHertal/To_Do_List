@@ -1,11 +1,17 @@
 import axios from "axios";
-
 const api = axios.create({
     baseURL: "https://localhost:7202/api",
-  });
-
-  export const CreateTarefa = async (titulo, descricao, data_criacao, userId, status, nota, fk_id_quadro) => {
-    try{ 
+});
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('AuthToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+export const CreateTarefa = async (titulo, descricao, data_criacao, userId, status, nota, fk_id_quadro) => {
+    try
+    {
         const response = await api.post(`/Tarefas/CreateTarefaAsync`, {
             titulo : titulo,
             descricao : descricao,
@@ -16,7 +22,9 @@ const api = axios.create({
             fk_id_quadro : fk_id_quadro
         });
         return response;
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         return error.response.data;
     }
 }

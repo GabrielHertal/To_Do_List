@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using To_Do_List.Server.DTO;
 using To_Do_List.Server.Models;
 
@@ -6,6 +8,7 @@ namespace To_Do_List.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUsersService _user;
@@ -15,6 +18,7 @@ namespace To_Do_List.Server.Controllers
             _user = user;
         }
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<ActionResult> Register([FromBody] UserDTO userdto)
         {
             try
@@ -23,6 +27,13 @@ namespace To_Do_List.Server.Controllers
 
                 if (result == 201)
                 {
+                    var user = new Users
+                    {
+                        Email = userdto.email,
+                        Senha = userdto.senha,
+                        Nome = userdto.nome,
+                        Ativo = 1
+                    };
                     return Ok(new { Message = "Usuário registrado com sucesso.", Status = "200" });
                 }
                 else if(result == 409)

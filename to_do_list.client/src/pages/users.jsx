@@ -6,7 +6,10 @@ const Usuários = () => {
     const [showModal, setShowModal] = useState(false); // Controle do modal
     const [newUser, setNewUser] = useState({ name: "", email: "", password : "" }); // Novo usuário
     const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = Math.ceil(users.length / 10); // Assuming 10 users per page
+    const USERS_PER_PAGE = 10; // Número de usuários por página
+    const totalPages = Math.ceil(users.length / USERS_PER_PAGE); 
+    const startpageusers = Math.max(1, currentPage - Math.floor(USERS_PER_PAGE / 2));
+    const endPageUsers = Math.min(totalPages, startpageusers + USERS_PER_PAGE - 1); 
 
     // Carregar usuários da API
     const fetchUsers = async () => {
@@ -23,12 +26,10 @@ const Usuários = () => {
             setUsers([]);
         }
     };    
-
     // Carregar usuários ao montar o componente
     useEffect(() => {
         fetchUsers();
     }, []);
-
     // Criar novo usuário
     const handleCreateUser = async () => {
         try {
@@ -50,7 +51,6 @@ const Usuários = () => {
             console.log(error);
         }
     };
-
     // Editar usuário
     const handleEditUser = async (id) => {
         try{
@@ -63,19 +63,15 @@ const Usuários = () => {
             alert(error);
         }
     };
-
+    // Atualizar usuário
     const handleUpdateUser = async () => {
         try {
             const data = await UpdateUserById(newUser.id, newUser.email, newUser.name, newUser.password);
             if (data.status === 200) {
                 setShowModal(false);
                 fetchUsers();
-                
-                const loggedUserId = localStorage.getItem("UserID");
-                if (loggedUserId && parseInt(loggedUserId) === newUser.id) {
-                    localStorage.setItem("UserName", newUser.name);
-                    window.dispatchEvent(new Event("userNameUpdated"));
-                }
+                localStorage.setItem("UserName", newUser.name);
+                window.dispatchEvent(new Event("userNameUpdated"));
             } else if (data.status === '409') {
                 setNewUser({ name: "", email: "", password: "" });
                 alert("Usuário já cadastrado");
@@ -83,9 +79,9 @@ const Usuários = () => {
             }
         } catch (error) {
             console.log(error);
+            alert(error);
         }
     };
-
     // Deletar usuário
     const handleDeleteUser = async (id) => {
         try {
@@ -98,18 +94,16 @@ const Usuários = () => {
             console.log(error);
         }
     };
-
     return (
         <div className="container mt-4">
             <h1 className="text-center mb-4">Usuários</h1>
-            <div className="d-flex justify-content-between mb-3">
+            <div className="d-flex justify-content-end mb-3">
                 <Button variant="primary" onClick={() => setShowModal(true)}>
                     + Criar Usuário
                 </Button>
             </div>
-
             {/* Tabela de Usuários */}
-            <Table striped bordered hover>
+            <Table borderless responsive="bg">
                 <thead className="text-center">
                     <tr>
                         <th>ID</th>
@@ -124,32 +118,40 @@ const Usuários = () => {
                             <td>{user.id}</td>
                             <td>{user.nome}</td>
                             <td>{user.email}</td>
-                            <td>
-                                <Button variant="warning" onClick={() => handleEditUser(user.id)}>
-                                    Editar
-                                </Button>
-                                <Button variant="danger" onClick={() => handleDeleteUser(user.id)}>
-                                    Deletar
-                                </Button>
+                            <td className="align-align-middle">
+                                <div className="d-flex justify-content-center gap-2">
+                                    <Button variant="warning" onClick={() => handleEditUser(user.id)}>
+                                        Editar
+                                    </Button>
+                                    <Button variant="danger" onClick={() => handleDeleteUser(user.id)}>
+                                        Deletar
+                                    </Button>
+                                </div>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </Table>
-
             {/* Paginação */}
-            <Pagination>
-                {[...Array(totalPages).keys()].map((page) => (
+            <Pagination className="justify-content-center">
+               <Pagination.Prev
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                />
+                {Array.from({ length: endPageUsers - startpageusers + 1 }, (_, index) => (
                     <Pagination.Item
-                        key={page + 1}
-                        active={page + 1 === currentPage}
-                        onClick={() => setCurrentPage(page + 1)}
+                        key={index}
+                        active={index + startpageusers === currentPage}
+                        onClick={() => setCurrentPage(index + startpageusers)}
                     >
-                        {page + 1}
+                        {index + startpageusers}
                     </Pagination.Item>
                 ))}
+                <Pagination.Next
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                />
             </Pagination>
-
             {/* Modal de Cadastro */}
             <Modal
                 show={showModal}
@@ -195,6 +197,8 @@ const Usuários = () => {
                         onClick={() => {
                             setShowModal(false);
                             setNewUser({ name: "", email: "", password: "" });
+                            console.log("Modal fechado");
+                            console.log(newUser)
                         }}
                     >
                         Fechar
@@ -207,5 +211,4 @@ const Usuários = () => {
         </div>
     );
 };
-
 export default Usuários;
